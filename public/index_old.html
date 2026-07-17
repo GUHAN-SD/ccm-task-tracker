@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCM Task Tracker — Dashboard</title>
+<style>
+  :root {
+    --bg: #f9f9f7;
+    --card-bg: #fcfcfb;
+    --border: #e1e0d9;
+    --text: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --accent: #2a78d6;
+    --accent-soft: #eef3fc;
+    /* status palette (fixed, from dataviz skill) */
+    --good: #0ca30c;
+    --good-soft: #e6f7e6;
+    --warning: #fab219;
+    --warning-soft: #fef3dc;
+    --critical: #d03b3b;
+    --critical-soft: #fce9e9;
+    /* categorical roles (fixed order: creative, production, editor) */
+    --role-creative: #2a78d6;
+    --role-production: #008300;
+    --role-editor: #e87ba4;
+    /* sequential blue ramp for progress meters */
+    --seq-100: #cde2fb;
+    --seq-400: #3987e5;
+    --seq-550: #1c5cab;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 32px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 20px; }
+  header p { margin: 0; color: var(--text-secondary); font-size: 13px; }
+  #status-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  main { padding: 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card h2 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .card .subtitle {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* KPI tiles */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .kpi-tile {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .kpi-tile .value {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .kpi-tile .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi-tile.warn .value { color: var(--critical); }
+
+  /* Pipeline funnel (stacked horizontal bars) */
+  .funnel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .funnel-row:last-child { margin-bottom: 0; }
+  .funnel-label { width: 170px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+  .funnel-track {
+    flex: 1;
+    display: flex;
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #f1f0ec;
+  }
+  .funnel-seg { height: 100%; }
+  .funnel-seg.not-started { background: #d8d7d0; }
+  .funnel-seg.in-progress { background: var(--warning); }
+  .funnel-seg.done { background: var(--good); }
+  .funnel-count { width: 90px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+  /* Team workload */
+  .legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .team-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .team-row:last-child { margin-bottom: 0; }
+  .team-label { width: 130px; font-size: 12px; flex-shrink: 0; }
+  .team-track {
+    flex: 1;
+    display: flex;
+    height: 16px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #f1f0ec;
+    gap: 2px;
+  }
+  .team-seg { height: 100%; border-radius: 2px; }
+  .team-count { width: 30px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+  /* Client progress */
+  .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .client-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .client-card .name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .client-card .count { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .meter-track { height: 8px; border-radius: 4px; background: #f1f0ec; overflow: hidden; }
+  .meter-fill { height: 100%; background: var(--seq-400); border-radius: 4px; }
+  .client-card .pct { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Unassigned queue */
+  .unassigned-list { max-height: 220px; overflow-y: auto; }
+  .unassigned-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .unassigned-row:last-child { border-bottom: none; }
+  .missing-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--critical-soft);
+    color: var(--critical);
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  /* Controls + table (from MVP) */
+  .controls {
+    display: flex;
+    gap: 12px;
+    padding: 16px 32px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .controls input, .controls select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+  }
+  .controls input { flex: 1; min-width: 200px; }
+  .table-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; white-space: nowrap; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: #fafbfc; color: var(--muted); font-weight: 600; position: sticky; top: 0; }
+  tr:hover td { background: #fafbff; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge.not-started { background: #f1f2f4; color: var(--muted); }
+  .badge.approved { background: var(--good-soft); color: var(--good); }
+  .badge.not-approved { background: var(--critical-soft); color: var(--critical); }
+  .unassigned-cell { color: var(--critical); font-style: italic; }
+  #count { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  #error {
+    display: none;
+    margin: 0 32px 20px;
+    padding: 16px;
+    background: var(--critical-soft);
+    border: 1px solid #f0b3b3;
+    border-radius: 8px;
+    color: var(--critical);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CCM Task Tracker — Dashboard</h1>
+  <p>Live view of the "Clients Tracker" master tab, pulled straight from the Node backend.</p>
+  <span id="status-badge">Loading…</span>
+</header>
+
+<div id="error"></div>
+
+<main>
+
+  <!-- KPI tiles -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- Pipeline funnel -->
+  <div class="card">
+    <h2>Pipeline — where the 113 videos stand</h2>
+    <p class="subtitle">Each stage's status field, rolled up across every client tab</p>
+    <div id="funnel"></div>
+  </div>
+
+  <!-- Team workload -->
+  <div class="card">
+    <h2>Team workload</h2>
+    <p class="subtitle">Videos assigned per person, by role</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--role-creative)"></span>Creative</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--role-production)"></span>Production</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--role-editor)"></span>Editor</span>
+    </div>
+    <div id="teamChart"></div>
+  </div>
+
+  <!-- Client progress + Unassigned queue side by side -->
+  <div class="card">
+    <h2>Per-client progress</h2>
+    <p class="subtitle">Share of stage fields that have moved past "Not started"</p>
+    <div class="client-grid" id="clientGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Unassigned work queue</h2>
+    <p class="subtitle">Videos missing a Production or Editor owner</p>
+    <div class="unassigned-list" id="unassignedList"></div>
+  </div>
+
+  <!-- All Tasks table -->
+  <div class="card" style="padding:0;">
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search by client, video title, or assignee…">
+      <select id="clientFilter"><option value="">All clients</option></select>
+      <select id="assigneeFilter"><option value="">All creative assignees</option></select>
+    </div>
+    <div style="padding:20px;">
+      <div id="count"></div>
+      <div class="table-wrap">
+        <table id="taskTable">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video Title</th>
+              <th>Priority</th>
+              <th>Deadline</th>
+              <th>Creative</th>
+              <th>Script Status</th>
+              <th>Production</th>
+              <th>Image/Video Status</th>
+              <th>Editor</th>
+              <th>Editing Status</th>
+              <th>Final Internal</th>
+              <th>Client Approval</th>
+              <th>Broadcast</th>
+            </tr>
+          </thead>
+          <tbody id="taskBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let allTasks = [];
+
+const STAGE_FIELDS = [
+  { label: 'Script & Storyboard', field: 'Script & Storyboard Status' },
+  { label: 'Image/Video Generation', field: 'Image & Video Generation Status' },
+  { label: 'Editing', field: 'Editing Status' },
+  { label: 'Final Internal Approval', field: 'Final Internal Approval' },
+  { label: 'Client Approval', field: 'Client Approval' },
+  { label: 'Broadcast', field: 'Broadcast Status' },
+];
+
+// Fixed role order — never cycled/reassigned
+const ROLE_COLORS = {
+  Creative: 'var(--role-creative)',
+  Production: 'var(--role-production)',
+  Editor: 'var(--role-editor)',
+};
+
+function statusBucket(value) {
+  if (!value) return 'not-started';
+  const v = value.toLowerCase();
+  if (v.includes('not yet') || v.includes('not started')) return 'not-started';
+  if (v.includes('progress')) return 'in-progress';
+  if (v.includes('approved') || v.includes('completed') || v.includes('done')) return 'done';
+  return 'not-started';
+}
+
+function badgeClass(value) {
+  if (!value) return 'not-started';
+  const v = value.toLowerCase();
+  if (v.includes('not yet approved') || v.includes('not started') || v.includes('not yet')) return 'not-started';
+  if (v.includes('approved')) return 'approved';
+  return 'not-started';
+}
+
+function cell(value, isAssignee) {
+  if (isAssignee) {
+    return value && value.trim() ? value : '<span class="unassigned-cell">Unassigned</span>';
+  }
+  return `<span class="badge ${badgeClass(value)}">${value || '—'}</span>`;
+}
+
+// ---- KPI tiles ----
+function renderKPIs(tasks) {
+  const total = tasks.length;
+  const clients = new Set(tasks.map(t => t['Client Name']).filter(Boolean)).size;
+  const notStarted = tasks.filter(t => statusBucket(t['Script & Storyboard Status']) === 'not-started').length;
+  const unassigned = tasks.filter(t => !(t['Production Team'] || '').trim() || !(t['Editor'] || '').trim()).length;
+  const withDeadline = tasks.filter(t => (t['Deadline'] || '').trim()).length;
+
+  const tiles = [
+    { value: total, label: 'Total videos' },
+    { value: clients, label: 'Clients' },
+    { value: notStarted, label: 'Not started (script stage)' },
+    { value: unassigned, label: 'Missing Production/Editor owner', warn: true },
+    { value: withDeadline, label: 'Videos with a deadline set' },
+  ];
+
+  document.getElementById('kpiRow').innerHTML = tiles.map(t => `
+    <div class="kpi-tile ${t.warn ? 'warn' : ''}">
+      <div class="value">${t.value}</div>
+      <div class="label">${t.label}</div>
+    </div>
+  `).join('');
+}
+
+// ---- Pipeline funnel ----
+function renderFunnel(tasks) {
+  const rows = STAGE_FIELDS.map(stage => {
+    const counts = { 'not-started': 0, 'in-progress': 0, 'done': 0 };
+    tasks.forEach(t => counts[statusBucket(t[stage.field])]++);
+    const total = tasks.length || 1;
+    return `
+      <div class="funnel-row">
+        <div class="funnel-label">${stage.label}</div>
+        <div class="funnel-track">
+          <div class="funnel-seg done" style="width:${counts.done / total * 100}%" title="${counts.done} done"></div>
+          <div class="funnel-seg in-progress" style="width:${counts['in-progress'] / total * 100}%" title="${counts['in-progress']} in progress"></div>
+          <div class="funnel-seg not-started" style="width:${counts['not-started'] / total * 100}%" title="${counts['not-started']} not started"></div>
+        </div>
+        <div class="funnel-count">${counts.done + counts['in-progress']} / ${total} moved</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('funnel').innerHTML = rows;
+}
+
+// ---- Team workload ----
+function renderTeamChart(tasks) {
+  const roleFields = { Creative: 'Creative Team', Production: 'Production Team', Editor: 'Editor' };
+  const counts = {}; // name -> { Creative, Production, Editor }
+
+  Object.entries(roleFields).forEach(([role, field]) => {
+    tasks.forEach(t => {
+      const name = (t[field] || '').trim();
+      if (!name) return;
+      counts[name] = counts[name] || { Creative: 0, Production: 0, Editor: 0 };
+      counts[name][role]++;
+    });
+  });
+
+  const names = Object.keys(counts).sort((a, b) => {
+    const totalA = counts[a].Creative + counts[a].Production + counts[a].Editor;
+    const totalB = counts[b].Creative + counts[b].Production + counts[b].Editor;
+    return totalB - totalA;
+  });
+
+  const maxTotal = Math.max(1, ...names.map(n => counts[n].Creative + counts[n].Production + counts[n].Editor));
+
+  const rows = names.map(name => {
+    const c = counts[name];
+    const total = c.Creative + c.Production + c.Editor;
+    const scale = 100 / maxTotal;
+    return `
+      <div class="team-row">
+        <div class="team-label">${name}</div>
+        <div class="team-track">
+          ${c.Creative ? `<div class="team-seg" style="width:${c.Creative * scale}%;background:${ROLE_COLORS.Creative}" title="${c.Creative} Creative"></div>` : ''}
+          ${c.Production ? `<div class="team-seg" style="width:${c.Production * scale}%;background:${ROLE_COLORS.Production}" title="${c.Production} Production"></div>` : ''}
+          ${c.Editor ? `<div class="team-seg" style="width:${c.Editor * scale}%;background:${ROLE_COLORS.Editor}" title="${c.Editor} Editor"></div>` : ''}
+        </div>
+        <div class="team-count">${total}</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('teamChart').innerHTML = rows || '<p class="subtitle">No assignees found.</p>';
+}
+
+// ---- Per-client progress ----
+function renderClientProgress(tasks) {
+  const byClient = {};
+  tasks.forEach(t => {
+    const name = t['Client Name'];
+    if (!name) return;
+    byClient[name] = byClient[name] || [];
+    byClient[name].push(t);
+  });
+
+  const cards = Object.entries(byClient).map(([name, rows]) => {
+    let movedFields = 0;
+    let totalFields = 0;
+    rows.forEach(r => {
+      STAGE_FIELDS.forEach(s => {
+        totalFields++;
+        if (statusBucket(r[s.field]) !== 'not-started') movedFields++;
+      });
+    });
+    const pct = totalFields ? Math.round(movedFields / totalFields * 100) : 0;
+    return `
+      <div class="client-card">
+        <div class="name">${name}</div>
+        <div class="count">${rows.length} video${rows.length !== 1 ? 's' : ''}</div>
+        <div class="meter-track"><div class="meter-fill" style="width:${pct}%"></div></div>
+        <div class="pct">${pct}% moved past "Not started"</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('clientGrid').innerHTML = cards;
+}
+
+// ---- Unassigned queue ----
+function renderUnassigned(tasks) {
+  const missing = tasks.filter(t => !(t['Production Team'] || '').trim() || !(t['Editor'] || '').trim());
+  const list = document.getElementById('unassignedList');
+  if (!missing.length) {
+    list.innerHTML = '<p class="subtitle">Nothing missing an owner — nice.</p>';
+    return;
+  }
+  list.innerHTML = missing.slice(0, 50).map(t => {
+    const tags = [];
+    if (!(t['Production Team'] || '').trim()) tags.push('<span class="missing-tag">No Production</span>');
+    if (!(t['Editor'] || '').trim()) tags.push('<span class="missing-tag">No Editor</span>');
+    return `<div class="unassigned-row"><span>${t['Client Name']} — ${t['Video Title']}</span><span>${tags.join('')}</span></div>`;
+  }).join('') + (missing.length > 50 ? `<p class="subtitle">…and ${missing.length - 50} more.</p>` : '');
+}
+
+// ---- All Tasks table ----
+function render(tasks) {
+  const body = document.getElementById('taskBody');
+  body.innerHTML = tasks.map(t => `
+    <tr>
+      <td>${t['Client Name'] || ''}</td>
+      <td>${t['Video Title'] || ''}</td>
+      <td>${t['Priority'] || ''}</td>
+      <td>${t['Deadline'] || '<span class="unassigned-cell">No deadline</span>'}</td>
+      <td>${cell(t['Creative Team'], true)}</td>
+      <td>${cell(t['Script & Storyboard Status'])}</td>
+      <td>${cell(t['Production Team'], true)}</td>
+      <td>${cell(t['Image & Video Generation Status'])}</td>
+      <td>${cell(t['Editor'], true)}</td>
+      <td>${cell(t['Editing Status'])}</td>
+      <td>${cell(t['Final Internal Approval'])}</td>
+      <td>${cell(t['Client Approval'])}</td>
+      <td>${cell(t['Broadcast Status'])}</td>
+    </tr>
+  `).join('');
+  document.getElementById('count').textContent = `${tasks.length} of ${allTasks.length} tasks shown`;
+}
+
+function populateFilters(tasks) {
+  const clientSel = document.getElementById('clientFilter');
+  const assigneeSel = document.getElementById('assigneeFilter');
+  const clients = [...new Set(tasks.map(t => t['Client Name']).filter(Boolean))].sort();
+  const assignees = [...new Set(tasks.map(t => t['Creative Team']).filter(Boolean))].sort();
+  clients.forEach(c => clientSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+  assignees.forEach(a => assigneeSel.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`));
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const client = document.getElementById('clientFilter').value;
+  const assignee = document.getElementById('assigneeFilter').value;
+  const filtered = allTasks.filter(t => {
+    const matchesQ = !q || Object.values(t).some(v => String(v).toLowerCase().includes(q));
+    const matchesClient = !client || t['Client Name'] === client;
+    const matchesAssignee = !assignee || t['Creative Team'] === assignee;
+    return matchesQ && matchesClient && matchesAssignee;
+  });
+  render(filtered);
+}
+
+async function loadTasks() {
+  const badge = document.getElementById('status-badge');
+  const errorBox = document.getElementById('error');
+  try {
+    const res = await fetch('/api/tasks');
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    allTasks = await res.json();
+    badge.textContent = `Loaded ${allTasks.length} tasks — ${new Date().toLocaleString()}`;
+    errorBox.style.display = 'none';
+
+    renderKPIs(allTasks);
+    renderFunnel(allTasks);
+    renderTeamChart(allTasks);
+    renderClientProgress(allTasks);
+    renderUnassigned(allTasks);
+    populateFilters(allTasks);
+    render(allTasks);
+  } catch (err) {
+    badge.textContent = 'Failed to load';
+    errorBox.style.display = 'block';
+    errorBox.textContent = `Could not load data from /api/tasks: ${err.message}. Make sure the Node server is running (node server.js) and the sheet/tab name is correct.`;
+  }
+}
+
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('clientFilter').addEventListener('change', applyFilters);
+document.getElementById('assigneeFilter').addEventListener('change', applyFilters);
+
+loadTasks();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,3191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCM Task Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --surface-1: #ffffff;
+      --page: #f8fafc;
+      --surface-2: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --gridline: #e2e8f0;
+      --baseline: #cbd5e1;
+      --border: rgba(15, 23, 42, 0.08);
+      --accent: #6366f1;
+
+      --role-creative: #10b981;
+      --role-production: #f59e0b;
+      --role-editor: #6366f1;
+
+      --status-not: #cbd5e1;
+      --status-progress: #eab308;
+      --status-done: #10b981;
+
+      --good: #10b981;
+      --warning: #eab308;
+      --serious: #f97316;
+      --critical: #ef4444;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --surface-1: #0f172a;
+      --page: #020617;
+      --surface-2: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --gridline: #1e293b;
+      --baseline: #334155;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #818cf8;
+
+      --role-creative: #34d399;
+      --role-production: #fbbf24;
+      --role-editor: #818cf8;
+
+      --status-not: #334155;
+      --status-progress: #fbbf24;
+      --status-done: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--page);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--surface-1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand h1 {
+      font-size: 17px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand .sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .view-as {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .view-as select {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .pill {
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      padding: 0 14px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .pill.live-pill .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--good);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .header-btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .header-btn:hover {
+      background: var(--surface-2) !important;
+      border-color: var(--baseline) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .pill.role-member {
+      border-color: var(--role-creative);
+      color: var(--role-creative);
+    }
+
+    button.btn {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 10px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button.btn:hover {
+      background: var(--surface-2);
+      border-color: var(--baseline);
+      transform: translateY(-1px);
+    }
+
+    button.btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+
+    button.btn.primary:hover {
+      background: color-mix(in srgb, var(--accent) 85%, #000);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+    }
+
+    button.btn.small {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    button.btn.approve {
+      background: color-mix(in srgb, var(--good) 12%, transparent);
+      color: var(--good);
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    button.btn.approve:hover {
+      background: color-mix(in srgb, var(--good) 18%, transparent);
+    }
+
+    button.btn.reject {
+      background: color-mix(in srgb, var(--critical) 12%, transparent);
+      color: var(--critical);
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    button.btn.reject:hover {
+      background: color-mix(in srgb, var(--critical) 18%, transparent);
+    }
+
+    label.switch-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+
+    nav.tabs {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 20px 24px 0 24px;
+      overflow-x: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    nav.tabs button {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    nav.tabs button.active {
+      color: #ffffff;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    }
+
+    nav.tabs button:hover:not(.active) {
+      color: var(--text-primary);
+      background: var(--surface-2);
+    }
+
+    nav.tabs button[data-admin-only] {
+      display: none;
+    }
+
+    body[data-role="admin"] nav.tabs button[data-admin-only] {
+      display: inline-block;
+    }
+
+    main {
+      padding: 22px 24px 60px 24px;
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    section.view {
+      display: none;
+    }
+
+    section.view.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    .kpi .label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .kpi .value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+    }
+
+    .kpi .value.accent-warn {
+      color: var(--serious);
+    }
+
+    .kpi .foot {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    h2.section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 28px 0 12px 0;
+    }
+
+    h2.section-title:first-child {
+      margin-top: 0;
+    }
+
+    .section-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin: -8px 0 14px 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .barchart .row {
+      display: grid;
+      grid-template-columns: 150px 1fr 40px;
+      align-items: center;
+      gap: 10px;
+      margin: 9px 0;
+    }
+
+    .barchart .row .rlabel {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+
+    .barchart .track {
+      position: relative;
+      height: 16px;
+      background: var(--gridline);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .barchart .seg {
+      height: 100%;
+    }
+
+    .barchart .seg:not(:last-child) {
+      border-right: 2px solid var(--surface-1);
+    }
+
+    .barchart .rvalue {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin: 6px 0 4px 0;
+    }
+
+    .legend .item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .legend .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .client-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 70px 130px;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gridline);
+    }
+
+    .client-row:last-child {
+      border-bottom: none;
+    }
+
+    .client-row .cname {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .client-row .ccount {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .progress-track {
+      height: 8px;
+      background: var(--gridline);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--role-creative);
+      border-radius: 4px;
+    }
+
+    .client-row .cpct {
+      font-size: 12.5px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .filters select,
+    .filters input[type=text] {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .filters select:focus,
+    .filters input[type=text]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    .filters input[type=text] {
+      min-width: 260px;
+    }
+
+    .count-note {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--baseline);
+      padding: 8px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background: var(--page);
+    }
+
+    thead th:hover {
+      color: var(--text-primary);
+    }
+
+    tbody td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--gridline);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: var(--surface-2);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+
+    .badge.not {
+      background: color-mix(in srgb, var(--status-not) 22%, transparent);
+      color: var(--text-secondary);
+    }
+
+    .badge.progress {
+      background: color-mix(in srgb, var(--warning) 18%, transparent);
+      color: var(--warning);
+    }
+
+    .badge.done {
+      background: color-mix(in srgb, var(--status-done) 18%, transparent);
+      color: var(--status-done);
+    }
+
+    .badge.critical {
+      background: color-mix(in srgb, var(--critical) 18%, transparent);
+      color: var(--critical);
+    }
+
+    .badge.critical .dot {
+      background: var(--critical);
+    }
+
+    .badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .badge.not .dot {
+      background: var(--text-muted);
+    }
+
+    .badge.progress .dot {
+      background: var(--warning);
+    }
+
+    .badge.done .dot {
+      background: var(--status-done);
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip .role-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .chip.active {
+      border-color: var(--role-creative);
+      color: var(--text-primary);
+      background: color-mix(in srgb, var(--role-creative) 12%, var(--surface-1));
+    }
+
+    .chip .n {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-strip {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin: 12px 0 18px 0;
+    }
+
+    .stat-strip .s {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+
+    .stat-strip .s b {
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .client-card .chead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .client-card .chead .n {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .client-card .chead .v {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .client-card .stagebreak {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .client-card .stagebreak .srow {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+
+    .deadline-list .drow {
+      display: grid;
+      grid-template-columns: 1fr 120px 140px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gridline);
+      font-size: 12.5px;
+    }
+
+    .deadline-list .drow:last-child {
+      border-bottom: none;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .callout {
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--serious) 10%, var(--surface-1));
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .callout b {
+      color: var(--text-primary);
+    }
+
+    .callout.good {
+      background: color-mix(in srgb, var(--good) 10%, var(--surface-1));
+    }
+
+    select.assign-select {
+      font: inherit;
+      font-size: 12px;
+      padding: 5px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-primary);
+    }
+
+    .saved-flash {
+      font-size: 11px;
+      color: var(--good);
+      margin-left: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .saved-flash.show {
+      opacity: 1;
+    }
+
+    .action-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    ::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--baseline);
+      border-radius: 4px;
+    }
+
+    footer.foot {
+      text-align: center;
+      padding: 30px 20px 50px 20px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    
+    .notification-banner {
+      background: var(--surface-2);
+      border-left: 4px solid var(--accent-orange, #f59e0b);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      animation: slideIn 0.3s ease-out;
+    }
+    .notification-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notification-item {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .notification-item.urgent-task {
+      border-left: 3px solid var(--critical);
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Custom Toast Notifications CSS */
+    .toast-message {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 18px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 280px;
+      max-width: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: auto;
+      animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .toast-message.success {
+      border-left-color: var(--good, #10b981);
+    }
+    .toast-message.error {
+      border-left-color: var(--critical, #ef4444);
+    }
+    .toast-message.info {
+      border-left-color: var(--accent, #6366f1);
+    }
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%) translateY(10px); opacity: 0; }
+      to { transform: translateX(0) translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body data-theme="light" data-role="<%= role %>">
+
+  <header class="topbar">
+    <div class="brand" style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="background:var(--accent); width:8px; height:24px; border-radius:3px;"></div>
+        <div>
+          <h1 style="font-size:18px; font-weight:800; margin:0; letter-spacing:-0.02em; display:flex; align-items:center; gap:8px; line-height:1;">
+            CCM Task Tracker
+            <span class="badge done" style="font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px; letter-spacing:normal;">Dashboard</span>
+          </h1>
+        </div>
+      </div>
+
+      <div class="brand-filters" style="display:flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border); padding:3px; border-radius:10px; height:38px;">
+        <select id="globalMonthSelect" class="btn"
+          style="background:transparent; border:none; color:var(--text-primary); font-size:12px; font-weight:600; padding:0 8px; height:100%; cursor:pointer; outline:none;">
+          <option value="">All Months</option>
+          <option value="Jan">Jan</option>
+          <option value="Feb">Feb</option>
+          <option value="Mar">Mar</option>
+          <option value="Apr">Apr</option>
+          <option value="May">May</option>
+          <option value="Jun">Jun</option>
+          <option value="Jul">Jul</option>
+          <option value="Aug">Aug</option>
+          <option value="Sep">Sep</option>
+          <option value="Oct">Oct</option>
+          <option value="Nov">Nov</option>
+          <option value="Dec">Dec</option>
+        </select>
+        <div style="width:1px; height:18px; background:var(--border);"></div>
+        <input type="text" id="globalYearInput" list="yearSuggestions" placeholder="Year" class="btn"
+          style="background:transparent; border:none; color:var(--text-primary); font-size:12px; font-weight:600; padding:0 8px; height:100%; width:70px; text-align:center; outline:none;">
+        <datalist id="yearSuggestions">
+          <option value="2026"></option>
+          <option value="2027"></option>
+          <option value="2028"></option>
+          <option value="2029"></option>
+          <option value="2030"></option>
+          <option value="2031"></option>
+          <option value="2032"></option>
+        </datalist>
+      </div>
+    </div>
+    
+    <div class="topbar-actions" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+
+      <span class="pill live-pill" style="height:38px; border-radius:10px; padding:0 12px; font-weight:600;"><span class="dot"></span>Live · <%= generatedAt %></span>
+      <span class="pill role-<%= role %>" id="whoAmI" style="height:38px; border-radius:10px; padding:0 12px; font-weight:600; gap:8px;"></span>
+      
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="btn header-btn" id="themeToggle" style="height:38px; border-radius:10px; padding:0 14px; font-weight:600; display:flex; align-items:center; gap:6px; border:1px solid var(--border); background:var(--surface-1); color:var(--text-primary);">🌙 Dark</button>
+        <a href="/logout" class="btn header-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; height:38px; border-radius:10px; padding:0 14px; font-weight:600; border:1px solid var(--border); background:var(--surface-1); color:var(--text-primary);">🚪 Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <% if (role==='admin' ) { %>
+      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="assign">Assign</button>
+      <button data-view="tasks">All Tasks</button>
+      <button data-view="approvals">Approvals</button>
+      <button data-view="client-approvals">Client Approval</button>
+      <button data-view="team">Team</button>
+      <button data-view="clients">Clients</button>
+      <% } else { %>
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="mytasks">My Tasks</button>
+        <button data-view="tasks">All Tasks</button>
+        <% } %>
+  </nav>
+
+  <main>
+    <div id="deadlineNotifications" style="display:none; margin-bottom: 24px;"></div>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="grid kpi-grid">
+        <div class="card kpi">
+          <div class="label">Total Videos</div>
+          <div class="value" id="kpiTotal">–</div>
+          <div class="foot">across 9 clients</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">Not Started</div>
+          <div class="value" id="kpiNotStarted">–</div>
+          <div class="foot" id="kpiNotStartedPct">–</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">Awaiting Approval</div>
+          <div class="value" id="kpiAwaiting">–</div>
+          <div class="foot">completed, not yet approved</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">Completed checkpoints</div>
+          <div class="value" id="kpiDone">–</div>
+          <div class="foot" id="kpiDonePct">of all checkpoints</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">Unassigned (Prod/Editor)</div>
+          <div class="value accent-warn" id="kpiUnassigned">–</div>
+          <div class="foot">videos with no owner</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">Upcoming Deadlines</div>
+          <div class="value" id="kpiDeadlines">–</div>
+          <div class="foot">have a date set</div>
+        </div>
+      </div>
+
+      <div class="callout" id="workloadCallout" style="display:none;"></div>
+
+      <div class="two-col">
+        <div class="card">
+          <h2 class="section-title" style="margin-top:0;">Pipeline — status by stage</h2>
+          <div class="section-desc">All videos, broken down by where each stage stands today.</div>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background:var(--status-not)"></span>Not
+              started</span>
+            <span class="item"><span class="swatch" style="background:var(--status-progress)"></span>In
+              progress / needs rework</span>
+            <span class="item"><span class="swatch" style="background:var(--status-done)"></span>Completed</span>
+          </div>
+          <div class="barchart" id="stageChart"></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title" style="margin-top:0;">Workload by team member</h2>
+          <div class="section-desc">Videos assigned per person, across their role.</div>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background:var(--role-creative)"></span>Creative</span>
+            <span class="item"><span class="swatch" style="background:var(--role-production)"></span>Production</span>
+            <span class="item"><span class="swatch" style="background:var(--role-editor)"></span>Editor</span>
+          </div>
+          <div class="barchart" id="workloadChart"></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Client progress</h2>
+      <div class="card" id="clientProgressList"></div>
+    </section>
+
+    <!-- MY TASKS -->
+    <section class="view" id="view-mytasks">
+      <h2 class="section-title" style="margin-top:0;" id="myTasksTitle">My Tasks</h2>
+      <div class="section-desc" id="myTasksDesc"></div>
+      <div class="stat-strip" id="myTasksStat"></div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Priority</th>
+              <th>Deadline</th>
+              <th>Stage</th>
+              <th>Asset Link</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="myTasksBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ALL TASKS -->
+    <section class="view" id="view-tasks">
+      <h2 class="section-title" style="margin-top:0;">All videos</h2>
+      <div class="filters">
+        <input type="text" id="taskSearch" placeholder="Search video / client / assignee…">
+        <select id="filterClient">
+          <option value="">All clients</option>
+        </select>
+        <% if (role === 'admin') { %>
+        <select id="filterAssignee">
+          <option value="">All assignees</option>
+        </select>
+        <select id="filterStage">
+          <option value="">All stages</option>
+          <option value="script">Script & Storyboard</option>
+          <option value="prod">Image & Video Generation</option>
+          <option value="edit">Editing</option>
+          <option value="internal">Final Internal Approval</option>
+          <option value="client">Client Approval</option>
+          <option value="broadcast">Broadcast</option>
+        </select>
+        <select id="filterStatus">
+          <option value="">Any status</option>
+          <option value="not">Not started</option>
+          <option value="progress">In progress</option>
+          <option value="done">Done</option>
+        </select>
+        <% } %>
+        <button class="btn" id="exportCsv">⬇ Export view (CSV)</button>
+      </div>
+      <div class="count-note" id="taskCount"></div>
+      <div class="table-scroll">
+        <table id="taskTable">
+          <thead>
+            <tr id="taskTableHead"></tr>
+          </thead>
+          <tbody id="taskTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- APPROVALS (admin) -->
+    <section class="view" id="view-approvals">
+      <h2 class="section-title" style="margin-top:0;">Stage approvals</h2>
+      <div class="section-desc">Approve or send back completed stages.</div>
+      <div class="filters">
+        <select id="approvalsFilterClient">
+          <option value="">All clients</option>
+        </select>
+        <select id="approvalsFilterAssignee">
+          <option value="">All assignees</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Script Approval</th>
+              <th>Ai Image & Video Approval</th>
+              <th>Final Video Approval</th>
+            </tr>
+          </thead>
+          <tbody id="approvalsBody"></tbody>
+        </table>
+      </div>
+
+      <h2 class="section-title">Final gates</h2>
+      <div class="section-desc">Final Internal Approval, Client Approval, Broadcast — move these forward once the
+        3 stages above are approved.</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Final Internal</th>
+              <th>Client Approval</th>
+              <th>Broadcast</th>
+            </tr>
+          </thead>
+          <tbody id="gatesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CLIENT APPROVALS -->
+    <section class="view" id="view-client-approvals">
+      <h2 class="section-title" style="margin-top:0;">Client Approvals</h2>
+      <div class="section-desc">Approve, request changes, or mark under client review. Shows final video assets.</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th style="text-align:center; width:120px;">Final Video (Link)</th>
+              <th>Current Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="clientApprovalsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ASSIGN (admin) -->
+    <section class="view" id="view-assign">
+      <h2 class="section-title" style="margin-top:0;">Assign team members</h2>
+      <div class="section-desc">Change any dropdown to reassign team members — click Edit to start and Apply to save
+        changes.
+      </div>
+      <div class="filters">
+        <input type="text" id="assignSearch" placeholder="Search video / client…">
+        <select id="assignFilterClient">
+          <option value="">All clients</option>
+        </select>
+        <div id="assignControls" style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+          <button id="btnAssignEdit" class="btn primary" onclick="startAssignEdit()">✏️ Edit</button>
+          <button id="btnAssignAdd" class="btn primary" onclick="openAddTaskModal()">➕ New Task</button>
+          <button id="btnAssignResetClient" class="btn reject" onclick="handleResetClientTasks()">🗑️ Reset</button>
+          <button id="btnAssignApply" class="btn good" style="display:none;" onclick="applyAssignments()" disabled>✓ Apply</button>
+          <button id="btnAssignCancel" class="btn" style="display:none;" onclick="cancelAssignments()">❌ Cancel</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Priority</th>
+              <th>Deadline</th>
+              <th>Creative</th>
+              <th>Production</th>
+              <th>Editor</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="assignBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="view" id="view-team">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom: 8px;">
+        <h2 class="section-title" style="margin:0;">Team task views</h2>
+        <% if (role === 'admin') { %>
+        <button class="btn primary" onclick="openAddMemberModal()">➕ Add Member</button>
+        <% } %>
+      </div>
+      <div class="section-desc">Browse everything assigned to anyone on the team.</div>
+      <div class="chip-row" id="teamChips"></div>
+      <div class="stat-strip" id="teamStat"></div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Role on this video</th>
+              <th>Stage status</th>
+              <th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody id="teamTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CLIENTS -->
+    <section class="view" id="view-clients">
+      <h2 class="section-title" style="margin-top:0;">Clients</h2>
+      <div class="section-desc" id="clientsDesc"></div>
+      <div class="clients-grid" id="clientsGrid"></div>
+    </section>
+
+    <!-- DEADLINES -->
+    <section class="view" id="view-deadlines">
+      <h2 class="section-title" style="margin-top:0;">Deadlines</h2>
+      <div class="callout" id="deadlineCallout"></div>
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Scheduled</h2>
+        <div class="deadline-list" id="deadlineScheduled"></div>
+      </div>
+      <h2 class="section-title">No deadline set (<span id="noDeadlineCount"></span>)</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Video</th>
+              <th>Creative</th>
+              <th>Production</th>
+              <th>Editor</th>
+            </tr>
+          </thead>
+          <tbody id="noDeadlineBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">Live from the CCM Project Tracker system Google Sheet, via the Node.js backend · every action
+    here writes straight
+    back to the sheet</footer>
+
+  <script>
+    const ORIGINAL_DATA = <%- dataJson %>;
+    let DATA = [...ORIGINAL_DATA];
+    const ROSTER = <%- rosterJson %>;
+
+    let isAssignEditing = false;
+    let pendingAssignments = {};
+    const CLIENTS = <%- clientsJson %>;
+    const ROLE = '<%= role %>';
+    const MY_NAME = '<%= personName %>';
+    const MY_EMAIL = '<%= userEmail %>';
+    const TEAM_ACCOUNTS = <%- typeof teamAccountsJson !== 'undefined' ? teamAccountsJson : '{}' %>;
+
+    const STAGES = [
+      { key: 'script', label: 'Script & Storyboard', statusField: 'Script & Storyboard Status', approvalField: 'Script & Storyboard Approval', roleField: 'Creative Team', roleLabel: 'Creative' },
+      { key: 'prod', label: 'Image & Video Generation', statusField: 'Image & Video Generation Status', approvalField: 'Image & Video Generation Approval', roleField: 'Production Team', roleLabel: 'Production' },
+      { key: 'edit', label: 'Editing', statusField: 'Editing Status', approvalField: 'Editing Approval', roleField: 'Editor', roleLabel: 'Editor' },
+    ];
+    const GATE_FIELDS = ['Final Internal Approval', 'Client Approval', 'Broadcast Status'];
+    const CHECKPOINT_FIELDS = [
+      'Script & Storyboard Status', 'Script & Storyboard Approval',
+      'Image & Video Generation Status', 'Image & Video Generation Approval',
+      'Editing Status', 'Editing Approval',
+      'Final Internal Approval', 'Client Approval', 'Broadcast Status'
+    ];
+
+    function statusCategory(value) {
+      if (!value) return 'not';
+      const v = value.toLowerCase().trim();
+      if (v.startsWith('not')) return 'not';
+      if (v.includes('progress') || v.includes('review') || v.includes('pending') || v.includes('rework') || v.includes('changes') || v.includes('request')) return 'progress';
+      return 'done';
+    }
+    function videoProgressPct(row) {
+      let done = 0;
+      CHECKPOINT_FIELDS.forEach(f => { if (statusCategory(row[f]) === 'done') done++; });
+      return Math.round((done / CHECKPOINT_FIELDS.length) * 100);
+    }
+    function statusBadge(value, row, fieldKey) {
+      if (row && fieldKey) {
+        const stage = STAGES.find(s => s.statusField === fieldKey);
+        if (stage) {
+          const approvalVal = row[stage.approvalField];
+          if (value === 'Changes requested') {
+            const messageFieldByStage = {
+              'Script & Storyboard Status': 'Script & Storyboard Message',
+              'Image & Video Generation Status': 'Image & Video Generation Message',
+              'Editing Status': 'Editing Message'
+            };
+            const msgField = messageFieldByStage[fieldKey];
+            const comment = msgField ? (row[msgField] || '') : '';
+            const onClickAttr = comment ? `onclick="customAlert('Feedback from Admin', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer;" title="Click to view details"` : '';
+            return `<span class="badge progress" ${onClickAttr}><span class="dot"></span>Changes requested</span>`;
+          }
+          if (value === 'Changes in progress') {
+            return `<span class="badge progress"><span class="dot"></span>Changes in progress</span>`;
+          }
+          if (value === 'Completed') {
+            if (approvalVal === 'Approved') {
+              return `<span class="badge done"><span class="dot"></span>Completed</span>`;
+            } else {
+              return `<span class="badge critical"><span class="dot"></span>Completed</span>`;
+            }
+          }
+        }
+      }
+      const cat = statusCategory(value);
+      const label = value || '—';
+      return `<span class="badge ${cat}"><span class="dot"></span>${label}</span>`;
+    }
+    function updateLocalRow(videoTitle, field, value) {
+      const row = DATA.find(r => r['Video Title'] === videoTitle);
+      if (row) row[field] = value;
+    }
+
+    // Custom non-blocking visual Toast Notification helper
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `
+        <span style="flex-grow:1;">${message}</span>
+        <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; font-weight:700; padding:0 4px; line-height:1;" onclick="this.parentElement.remove()">×</button>
+      `;
+      container.appendChild(toast);
+      
+      // Auto-remove after 3.2 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Custom non-blocking Alert Dialog helper
+    function customAlert(title, message) {
+      const modal = document.getElementById('confirmModal');
+      const titleEl = document.getElementById('confirmTitle');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      
+      titleEl.textContent = title;
+      
+      // Parse Voice Note tag
+      let finalMessage = message || '';
+      let audioHtml = '';
+      
+      const match = finalMessage.match(/^\[Voice Note:([^\]]+)\]\s*(.*)/);
+      if (match) {
+        const audioUrl = match[1];
+        finalMessage = match[2];
+        audioHtml = `
+          <div style="margin-top:12px; margin-bottom:12px; display:flex; justify-content:center;">
+            <audio controls src="${audioUrl}" style="height:36px; max-width:280px;"></audio>
+          </div>
+        `;
+      }
+      
+      msgEl.innerHTML = `<div>${finalMessage}</div>${audioHtml}`;
+      modal.style.display = 'flex';
+      
+      // Configure elements temporarily as an alert box
+      cancelBtn.style.display = 'none';
+      okBtn.textContent = 'Close';
+      okBtn.className = 'btn primary';
+      
+      okBtn.onclick = function() {
+        modal.style.display = 'none';
+        // restore buttons defaults
+        cancelBtn.style.display = 'inline-block';
+        okBtn.textContent = 'Yes, Proceed';
+        okBtn.className = 'btn reject';
+      };
+    }
+
+    // Custom non-blocking Confirmation Modal helper
+    function customConfirm(title, message, onConfirm) {
+      const modal = document.getElementById('confirmModal');
+      const titleEl = document.getElementById('confirmTitle');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      modal.style.display = 'flex';
+      
+      okBtn.onclick = function() {
+        modal.style.display = 'none';
+        onConfirm();
+      };
+      
+      cancelBtn.onclick = function() {
+        modal.style.display = 'none';
+      };
+    }
+
+    // Custom non-blocking Prompt Modal helper for input fields
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedAudioBase64 = '';
+    let recTimer = null;
+    let recSeconds = 0;
+
+    function customPrompt(title, defaultValue, onSubmit, showVoice = false) {
+      const modal = document.getElementById('promptModal');
+      const titleEl = document.getElementById('promptTitle');
+      const inputEl = document.getElementById('promptInput');
+      const okBtn = document.getElementById('promptOkBtn');
+      const cancelBtn = document.getElementById('promptCancelBtn');
+      
+      // Voice section elements
+      const voiceSec = document.getElementById('promptVoiceSection');
+      const btnStart = document.getElementById('btnStartRec');
+      const btnStop = document.getElementById('btnStopRec');
+      const preview = document.getElementById('audioPreview');
+      const statusEl = document.getElementById('recStatus');
+      const indicator = document.getElementById('recIndicator');
+      
+      titleEl.textContent = title;
+      inputEl.value = defaultValue || '';
+      modal.style.display = 'flex';
+      setTimeout(() => inputEl.focus(), 50);
+      
+      // Reset recording state
+      recordedAudioBase64 = '';
+      if (recTimer) clearInterval(recTimer);
+      statusEl.textContent = 'Voice feedback is optional';
+      indicator.style.backgroundColor = 'var(--text-muted)';
+      btnStart.style.display = 'inline-flex';
+      btnStart.textContent = '🎤 Record';
+      btnStop.style.display = 'none';
+      preview.style.display = 'none';
+      preview.src = '';
+      
+      if (showVoice) {
+        voiceSec.style.display = 'block';
+      } else {
+        voiceSec.style.display = 'none';
+      }
+      
+      // Start recording
+      btnStart.onclick = async function() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          
+          let options = { mimeType: 'audio/webm' };
+          if (!MediaRecorder.isTypeSupported('audio/webm')) {
+            options = { mimeType: 'audio/mp4' };
+          }
+          
+          mediaRecorder = new MediaRecorder(stream, options);
+          mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) {
+              audioChunks.push(e.data);
+            }
+          };
+          
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: options.mimeType });
+            const audioUrl = URL.createObjectURL(blob);
+            preview.src = audioUrl;
+            preview.style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+              recordedAudioBase64 = reader.result;
+            };
+            
+            stream.getTracks().forEach(track => track.stop());
+          };
+          
+          mediaRecorder.start();
+          
+          btnStart.style.display = 'none';
+          btnStop.style.display = 'inline-flex';
+          indicator.style.backgroundColor = 'var(--critical)';
+          recSeconds = 0;
+          statusEl.textContent = 'Recording: 0s';
+          
+          recTimer = setInterval(() => {
+            recSeconds++;
+            statusEl.textContent = `Recording: ${recSeconds}s`;
+          }, 1000);
+          
+        } catch (err) {
+          console.error(err);
+          showToast('Could not access microphone: ' + err.message, 'error');
+        }
+      };
+      
+      // Stop recording
+      btnStop.onclick = function() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        if (recTimer) clearInterval(recTimer);
+        btnStop.style.display = 'none';
+        btnStart.style.display = 'inline-flex';
+        btnStart.textContent = '🎤 Record Again';
+        indicator.style.backgroundColor = 'var(--good)';
+        statusEl.textContent = 'Recording saved!';
+      };
+      
+      // Handle Enter keypress in prompt input
+      inputEl.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+          okBtn.click();
+        }
+      };
+      
+      okBtn.onclick = function() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        if (recTimer) clearInterval(recTimer);
+        
+        const textVal = inputEl.value.trim();
+        
+        if (recordedAudioBase64) {
+          okBtn.disabled = true;
+          okBtn.textContent = 'Saving...';
+          
+          fetch('/api/uploadAudio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audioBase64: recordedAudioBase64 })
+          })
+          .then(res => res.json())
+          .then(data => {
+            okBtn.disabled = false;
+            okBtn.textContent = 'Save';
+            modal.style.display = 'none';
+            if (data.url) {
+              const finalComment = `[Voice Note:${data.url}] ${textVal}`;
+              onSubmit(finalComment);
+            } else {
+              onSubmit(textVal);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            okBtn.disabled = false;
+            okBtn.textContent = 'Save';
+            modal.style.display = 'none';
+            showToast('Failed to upload audio, sending text comment only.', 'info');
+            onSubmit(textVal);
+          });
+        } else {
+          modal.style.display = 'none';
+          onSubmit(textVal);
+        }
+      };
+      
+      cancelBtn.onclick = function() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        if (recTimer) clearInterval(recTimer);
+        modal.style.display = 'none';
+      };
+    }
+
+    function flashSaved(el) {
+      if (!el) return;
+      let flash = el.parentElement.querySelector('.saved-flash');
+      if (!flash) {
+        flash = document.createElement('span');
+        flash.className = 'saved-flash';
+        flash.textContent = '✓ saved';
+        el.parentElement.appendChild(flash);
+      }
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 1400);
+    }
+
+    // Talks to the Node/Express backend instead of google.script.run
+    function callServer(fnName, args, onSuccess, onFailure) {
+      const endpointByFn = {
+        markComplete: { url: '/api/markComplete', argNames: ['videoTitle', 'stageKey'] },
+        startProgress: { url: '/api/startProgress', argNames: ['videoTitle', 'stageKey'] },
+        approveStage: { url: '/api/approveStage', argNames: ['videoTitle', 'stageKey', 'decision', 'comment'] },
+        setGateStatus: { url: '/api/setGateStatus', argNames: ['videoTitle', 'columnName', 'value'] },
+        assignPerson: { url: '/api/assignPerson', argNames: ['videoTitle', 'roleCol', 'personName'] },
+        createTask: { url: '/api/createTask', argNames: ['clientName', 'videoTitle', 'priority', 'deadline', 'creative', 'production', 'editor'] },
+        resetUserPassword: { url: '/api/resetUserPassword', argNames: ['email'] },
+        deleteTask: { url: '/api/deleteTask', argNames: ['videoTitle'] },
+        startChanges: { url: '/api/startChanges', argNames: ['videoTitle', 'stageKey'] },
+        updateStageLink: { url: '/api/updateStageLink', argNames: ['videoTitle', 'linkField', 'linkUrl'] },
+        addTeamMember: { url: '/api/addTeamMember', argNames: ['name', 'team', 'email'] },
+        deleteTeamMember: { url: '/api/deleteTeamMember', argNames: ['name', 'email'] },
+      };
+      const conf = endpointByFn[fnName];
+      if (!conf) { console.error('Unknown server function', fnName); return; }
+      const body = {};
+      conf.argNames.forEach((name, i) => { body[name] = args[i]; });
+
+      fetch(conf.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(body),
+      })
+        .then(res => {
+          if (!res.ok) return res.json().then(e => Promise.reject(e));
+          return res.json();
+        })
+        .then(result => { onSuccess && onSuccess(result); })
+        .catch(err => {
+          if (onFailure) {
+            onFailure(err);
+          } else {
+            alert('Could not save: ' + (err && err.error ? err.error : JSON.stringify(err)));
+          }
+        });
+    }
+
+    // ---------- Actions ----------
+    function handleStartProgress(videoTitle, stageKey) {
+      const stage = STAGES.find(s => s.key === stageKey);
+      callServer('startProgress', [videoTitle, stageKey], function () {
+        updateLocalRow(videoTitle, stage.statusField, 'In progress');
+        renderAll();
+      });
+    }
+    function handleStartChanges(videoTitle, stageKey) {
+      const stage = STAGES.find(s => s.key === stageKey);
+      callServer('startChanges', [videoTitle, stageKey], function () {
+        updateLocalRow(videoTitle, stage.statusField, 'Changes in progress');
+        renderAll();
+      });
+    }
+    function handleMarkComplete(videoTitle, stageKey) {
+      const stage = STAGES.find(s => s.key === stageKey);
+      callServer('markComplete', [videoTitle, stageKey], function () {
+        const pad = (n) => String(n).padStart(2, '0');
+        const d = new Date();
+        const timestamp = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        updateLocalRow(videoTitle, stage.statusField, 'Completed');
+
+        const finishedDateFieldByStage = {
+          script: 'Script & Storyboard Status - Finished Date',
+          prod: 'Image & Video Generation Status - Finished Date',
+          edit: 'Editing Status - Finished Date',
+        };
+        updateLocalRow(videoTitle, finishedDateFieldByStage[stageKey], timestamp);
+        renderAll();
+      });
+    }
+    function handleApprove(videoTitle, stageKey, decision) {
+      const stage = STAGES.find(s => s.key === stageKey);
+      
+      const proceedApproval = (comment = '') => {
+        callServer('approveStage', [videoTitle, stageKey, decision, comment], function () {
+          const messageFieldByStage = {
+            script: 'Script & Storyboard Message',
+            prod: 'Image & Video Generation Message',
+            edit: 'Editing Message'
+          };
+          if (decision === 'approve') {
+            updateLocalRow(videoTitle, stage.approvalField, 'Approved');
+            updateLocalRow(videoTitle, stage.statusField, 'Completed');
+            updateLocalRow(videoTitle, messageFieldByStage[stageKey], '');
+          } else {
+            updateLocalRow(videoTitle, stage.approvalField, 'Changes requested');
+            updateLocalRow(videoTitle, stage.statusField, 'Changes requested');
+            updateLocalRow(videoTitle, messageFieldByStage[stageKey], comment);
+          }
+          renderAll();
+          showToast(decision === 'approve' ? 'Stage approved successfully!' : 'Stage sent back for changes successfully!', 'success');
+        });
+      };
+      
+      if (decision === 'reject') {
+        customPrompt('Please enter details/comments on what changes are requested:', '', function(comment) {
+          if (!comment) return; // cancelled or empty prompt
+          proceedApproval(comment);
+        }, true);
+      } else {
+        proceedApproval();
+      }
+    }
+    function handleGate(videoTitle, columnName, value) {
+      callServer('setGateStatus', [videoTitle, columnName, value], function () {
+        updateLocalRow(videoTitle, columnName, value);
+        renderAll();
+      });
+    }
+    function handleAssign(videoTitle, roleCol, personName, selectEl) {
+      callServer('assignPerson', [videoTitle, roleCol, personName], function () {
+        updateLocalRow(videoTitle, roleCol, personName);
+        renderAll();
+        flashSaved(selectEl);
+      });
+    }
+
+    // ---------- Who am I ----------
+    function renderWhoAmI() {
+      const el = document.getElementById('whoAmI');
+      const name = (ROLE === 'admin') ? 'Admin' : MY_NAME;
+      const initials = name.substring(0, 2).toUpperCase();
+      const avatarBg = (ROLE === 'admin') ? 'var(--role-editor)' : 'var(--role-creative)';
+      const avatarHtml = `<div style="width:22px; height:22px; border-radius:50%; background:${avatarBg}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'Plus Jakarta Sans',sans-serif; margin-right:2px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">${initials}</div>`;
+      
+      el.innerHTML = `${avatarHtml}<span style="font-weight:700; color:var(--text-primary); font-size:12.5px;">${name}</span><span style="color:var(--text-muted); font-size:11.5px; font-weight:500;">· ${MY_EMAIL}</span>`;
+    }
+
+    // ---------- KPIs ----------
+    function renderKpis() {
+      const total = DATA.length;
+      let notStartedVideos = 0, checkpointsDone = 0, checkpointsProgress = 0, checkpointsTotal = 0, awaiting = 0;
+      DATA.forEach(row => {
+        let allNot = true;
+        CHECKPOINT_FIELDS.forEach(f => {
+          checkpointsTotal++;
+          const c = statusCategory(row[f]);
+          if (c === 'done') checkpointsDone++;
+          if (c === 'progress') checkpointsProgress++;
+          if (c !== 'not') allNot = false;
+        });
+        if (allNot) notStartedVideos++;
+        STAGES.forEach(s => { if (row[s.statusField] === 'Completed' && row[s.approvalField] !== 'Approved') awaiting++; });
+      });
+      const unassigned = DATA.filter(r => !r['Production Team'] || !r['Editor']).length;
+      const deadlineSet = DATA.filter(r => r['Deadline']).length;
+
+      document.getElementById('kpiTotal').textContent = total;
+      document.getElementById('kpiNotStarted').textContent = notStartedVideos;
+      document.getElementById('kpiNotStartedPct').textContent = Math.round(notStartedVideos / total * 100) + '% of videos untouched';
+      document.getElementById('kpiAwaiting').textContent = awaiting;
+      document.getElementById('kpiDone').textContent = checkpointsDone;
+      document.getElementById('kpiDonePct').textContent = Math.round(checkpointsDone / checkpointsTotal * 100) + '% of ' + checkpointsTotal + ' checkpoints';
+      document.getElementById('kpiUnassigned').textContent = unassigned;
+      document.getElementById('kpiDeadlines').textContent = deadlineSet + ' of ' + total;
+
+      const counts = {};
+      ROSTER.forEach(p => counts[p.name] = 0);
+      DATA.forEach(row => { ['Creative Team', 'Production Team', 'Editor'].forEach(f => { const n = row[f]; if (n && counts.hasOwnProperty(n)) counts[n]++; }); });
+      const zeroPeople = ROSTER.filter(p => counts[p.name] === 0).map(p => p.name);
+      const cbox = document.getElementById('workloadCallout');
+      if (zeroPeople.length) {
+        cbox.style.display = 'flex';
+        cbox.innerHTML = '⚠️ <div><b>Workload gap:</b> ' + zeroPeople.join(', ') + ' currently ' +
+          (zeroPeople.length === 1 ? 'has' : 'have') + ' zero videos assigned. ' +
+          unassigned + ' of ' + total + ' videos have no Production or Editor owner yet.' +
+          (ROLE === 'admin' ? ' Fix this in the <b>Assign</b> tab.' : '') + '</div>';
+      } else {
+        cbox.style.display = 'none';
+      }
+    }
+
+    function renderStageChart() {
+      const el = document.getElementById('stageChart');
+      el.innerHTML = '';
+      STAGES.concat(GATE_FIELDS.map(f => ({ key: f, label: f, statusField: f }))).forEach(stage => {
+        const counts = { not: 0, progress: 0, done: 0 };
+        DATA.forEach(row => { counts[statusCategory(row[stage.statusField])]++; });
+        const total = DATA.length;
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+      <div class="rlabel">${stage.label}</div>
+      <div class="track">
+        ${['not', 'progress', 'done'].map(k => {
+          const pct = (counts[k] / total * 100).toFixed(1);
+          if (counts[k] === 0) return '';
+          const color = k === 'not' ? 'var(--status-not)' : (k === 'progress' ? 'var(--status-progress)' : 'var(--status-done)');
+          const label = k === 'not' ? 'Not started' : (k === 'progress' ? 'In progress' : 'Done');
+          return `<div class="seg" title="${label}: ${counts[k]} of ${total}" style="width:${pct}%;background:${color}"></div>`;
+        }).join('')}
+      </div>
+      <div class="rvalue">${counts.done}/${total}</div>
+    `;
+        el.appendChild(row);
+      });
+    }
+
+    function renderWorkloadChart() {
+      const el = document.getElementById('workloadChart');
+      el.innerHTML = '';
+      const counts = {};
+      ROSTER.forEach(p => counts[p.name] = 0);
+      DATA.forEach(row => { ['Creative Team', 'Production Team', 'Editor'].forEach(f => { const n = row[f]; if (n && counts.hasOwnProperty(n)) counts[n]++; }); });
+      const max = Math.max(1, ...Object.values(counts));
+      ROSTER.forEach(p => {
+        const n = counts[p.name];
+        const pct = (n / max * 100).toFixed(1);
+        const color = p.team === 'Creative' ? 'var(--role-creative)' : (p.team === 'Production' ? 'var(--role-production)' : 'var(--role-editor)');
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+      <div class="rlabel">${p.name}</div>
+      <div class="track"><div class="seg" title="${p.name}: ${n} videos" style="width:${pct}%;background:${color}"></div></div>
+      <div class="rvalue">${n}</div>
+    `;
+        el.appendChild(row);
+      });
+    }
+
+    function renderClientProgress() {
+      const el = document.getElementById('clientProgressList');
+      el.innerHTML = '';
+      CLIENTS.forEach(c => {
+        const rows = DATA.filter(r => r['Client Name'] === c.name);
+        const avgPct = Math.round(rows.reduce((s, r) => s + videoProgressPct(r), 0) / rows.length);
+        const div = document.createElement('div');
+        div.className = 'client-row';
+        div.innerHTML = `
+      <div class="cname">${c.name}</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${avgPct}%"></div></div>
+      <div class="cpct">${avgPct}%</div>
+      <div class="ccount">${rows.length} videos</div>
+    `;
+        el.appendChild(div);
+      });
+    }
+
+    // ---------- My Tasks ----------
+    function renderMyTasks() {
+      const title = document.getElementById('myTasksTitle');
+      const desc = document.getElementById('myTasksDesc');
+      const body = document.getElementById('myTasksBody');
+
+      if (ROLE === 'admin') {
+        title.textContent = 'My Tasks — Admin view';
+        desc.textContent = 'As admin you don\'t have assigned production work — use Approvals and Assign instead.';
+        body.innerHTML = `<tr><td colspan="6"><div class="empty-state">Nothing assigned to Admin directly. Head to the Approvals or Assign tab.</div></td></tr>`;
+        document.getElementById('myTasksStat').innerHTML = '';
+        return;
+      }
+
+      title.textContent = 'My Tasks — ' + MY_NAME;
+      desc.textContent = 'Everything assigned to you. Click Start Progress when you begin work, and Mark Complete when finished.';
+
+      const items = [];
+      DATA.forEach(row => {
+        STAGES.forEach(stage => {
+          if (row[stage.roleField] === MY_NAME) {
+            items.push({ row, stage });
+          }
+        });
+      });
+
+      document.getElementById('myTasksStat').innerHTML = `
+    <span class="s"><b>${items.length}</b> total assigned</span>
+    <span class="s"><b>${items.filter(it => !it.row[it.stage.statusField] || it.row[it.stage.statusField] === 'Not started').length}</b> not started</span>
+    <span class="s"><b>${items.filter(it => it.row[it.stage.statusField] === 'In progress' || it.row[it.stage.statusField] === 'Changes in progress' || it.row[it.stage.statusField] === 'Changes requested').length}</b> in progress</span>
+    <span class="s"><b>${items.filter(it => it.row[it.stage.statusField] === 'Completed' && it.row[it.stage.approvalField] !== 'Approved').length}</b> waiting for approval</span>
+    <span class="s"><b>${items.filter(it => it.row[it.stage.approvalField] === 'Approved').length}</b> approved</span>
+  `;
+
+      body.innerHTML = items.map(it => {
+        const row = it.row, stage = it.stage;
+        const statusVal = row[stage.statusField] || '';
+        const approvalVal = row[stage.approvalField] || '';
+        
+        let actionCell;
+        if (approvalVal === 'Approved') {
+          actionCell = '<span class="badge done"><span class="dot"></span>Approved</span>';
+        } else if (statusVal === 'Completed') {
+          actionCell = '<span class="badge progress"><span class="dot"></span>Waiting for approval</span>';
+        } else if (statusVal === 'Changes requested') {
+          const messageFieldByStage = {
+            script: 'Script & Storyboard Message',
+            prod: 'Image & Video Generation Message',
+            edit: 'Editing Message'
+          };
+          const msgField = messageFieldByStage[stage.key];
+          const comment = msgField ? (row[msgField] || '') : '';
+          const onClickAttr = comment ? `onclick="customAlert('Feedback from Admin', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer; margin-right:8px;" title="Click to view details"` : 'style="margin-right:8px;"';
+          actionCell = `<span class="badge progress" ${onClickAttr}><span class="dot"></span>Changes requested</span>` +
+                       `<button class="btn small primary" onclick="handleStartChanges('${row['Video Title'].replace(/'/g, "\\'")}','${stage.key}')">▶ Start Changes</button>`;
+        } else if (statusVal === 'Changes in progress') {
+          actionCell = `<span class="badge progress" style="margin-right:8px;"><span class="dot"></span>Changes in progress</span>` +
+                       `<button class="btn small primary" onclick="handleMarkComplete('${row['Video Title'].replace(/'/g, "\\'")}','${stage.key}')">✓ Changes Completed</button>`;
+        } else if (statusVal === 'In progress') {
+          actionCell = `<button class="btn small primary" onclick="handleMarkComplete('${row['Video Title'].replace(/'/g, "\\'")}','${stage.key}')">✓ Mark Complete</button>`;
+        } else {
+          // not started / empty / needs rework
+          actionCell = `<button class="btn small primary" onclick="handleStartProgress('${row['Video Title'].replace(/'/g, "\\'")}','${stage.key}')">▶ Start Progress</button>`;
+          if (statusVal === 'Needs rework') {
+            actionCell = '<span class="badge progress" style="margin-right:6px"><span class="dot"></span>Sent back</span>' + actionCell;
+          }
+        }
+
+        const priority = row['Priority'] || 'Normal';
+        let priorityClass = 'not';
+        if (priority === 'High') priorityClass = 'progress';
+        const priorityBadge = `<span class="badge ${priorityClass}">${priority}</span>`;
+
+        const linkFields = {
+          script: 'Creative Link',
+          prod: 'Production Link',
+          edit: 'Editor Link'
+        };
+        const linkField = linkFields[stage.key];
+        const linkUrl = row[linkField] || '';
+        const linkHtml = getLinkIconHtml(row['Video Title'], linkField, linkUrl, true);
+
+        return `<tr>
+      <td>${row['Client Name']}</td>
+      <td>${row['Video Title']}</td>
+      <td>${priorityBadge}</td>
+      <td>${row['Deadline'] || '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${stage.label}</td>
+      <td>${linkHtml}</td>
+      <td>${actionCell}</td>
+    </tr>`;
+      }).join('') || `<tr><td colspan="7"><div class="empty-state">No videos assigned to you yet.</div></td></tr>`;
+    }
+
+    // ---------- All Tasks ----------
+    const TASK_COLUMNS = [
+      { key: 'Client Name', label: 'Client' },
+      { key: 'Video Title', label: 'Video' },
+      { key: 'Priority', label: 'Priority' },
+      { key: 'Deadline', label: 'Deadline' },
+      { key: 'Creative Team', label: 'Creative' },
+      { key: 'Creative Link', label: 'Creative Link' },
+      { key: 'Script & Storyboard Status', label: 'Script/Storyboard' },
+      { key: 'Script & Storyboard Status - Finished Date', label: 'Script Finished' },
+      { key: 'Production Team', label: 'Production' },
+      { key: 'Production Link', label: 'Production Link' },
+      { key: 'Image & Video Generation Status', label: 'Image/Video Gen' },
+      { key: 'Image & Video Generation Status - Finished Date', label: 'Image/Video Finished' },
+      { key: 'Editor', label: 'Editor' },
+      { key: 'Editor Link', label: 'Editor Link' },
+      { key: 'Editing Status', label: 'Editing' },
+      { key: 'Editing Status - Finished Date', label: 'Editing Finished' },
+      { key: 'Final Internal Approval', label: 'Internal Approval' },
+      { key: 'Client Approval', label: 'Client Approval' },
+      { key: 'Broadcast Status', label: 'Broadcast' },
+    ];
+    let taskSort = { key: 'Client Name', dir: 1 };
+
+    function populateFilterOptions() {
+      const clientSel = document.getElementById('filterClient');
+      if (clientSel.options.length <= 1) {
+        CLIENTS.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; clientSel.appendChild(o); });
+      }
+      const assigneeSel = document.getElementById('filterAssignee');
+      if (assigneeSel && assigneeSel.options.length <= 1) {
+        ROSTER.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; assigneeSel.appendChild(o); });
+      }
+      // Populate Assign Client filter
+      const assignClientSel = document.getElementById('assignFilterClient');
+      if (assignClientSel && assignClientSel.options.length <= 1) {
+        CLIENTS.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; assignClientSel.appendChild(o); });
+      }
+      // Populate Approvals filters
+      const appClientSel = document.getElementById('approvalsFilterClient');
+      if (appClientSel && appClientSel.options.length <= 1) {
+        CLIENTS.forEach(c => { const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; appClientSel.appendChild(o); });
+      }
+      const appAssigneeSel = document.getElementById('approvalsFilterAssignee');
+      if (appAssigneeSel && appAssigneeSel.options.length <= 1) {
+        ROSTER.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; appAssigneeSel.appendChild(o); });
+      }
+    }
+    function getFilteredTasks() {
+      const search = document.getElementById('taskSearch').value.toLowerCase().trim();
+      const client = document.getElementById('filterClient').value;
+      const assigneeEl = document.getElementById('filterAssignee');
+      const stageKeyEl = document.getElementById('filterStage');
+      const statusValEl = document.getElementById('filterStatus');
+      const assignee = assigneeEl ? assigneeEl.value : '';
+      const stageKey = stageKeyEl ? stageKeyEl.value : '';
+      const statusVal = statusValEl ? statusValEl.value : '';
+      return DATA.filter(row => {
+        if (client && row['Client Name'] !== client) return false;
+        if (assignee && row['Creative Team'] !== assignee && row['Production Team'] !== assignee && row['Editor'] !== assignee) return false;
+        if (search) {
+          const hay = (row['Client Name'] + ' ' + row['Video Title'] + ' ' + row['Creative Team'] + ' ' + row['Production Team'] + ' ' + row['Editor']).toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        if (stageKey) {
+          const stage = STAGES.find(s => s.key === stageKey);
+          const field = stage ? stage.statusField : stageKey;
+          if (statusVal && statusCategory(row[field]) !== statusVal) return false;
+        } else if (statusVal) {
+          const anyMatch = CHECKPOINT_FIELDS.some(f => statusCategory(row[f]) === statusVal);
+          if (!anyMatch) return false;
+        }
+        return true;
+      });
+    }
+    function renderTaskTable() {
+      const cols = TASK_COLUMNS;
+      const head = document.getElementById('taskTableHead');
+      head.innerHTML = cols.map(c => `<th data-key="${c.key}">${c.label} ${taskSort.key === c.key ? (taskSort.dir === 1 ? '▲' : '▼') : ''}</th>`).join('');
+      head.querySelectorAll('th').forEach(th => {
+        th.onclick = () => {
+          const key = th.dataset.key;
+          if (taskSort.key === key) taskSort.dir *= -1; else { taskSort.key = key; taskSort.dir = 1; }
+          renderTaskTable();
+        };
+      });
+      let rows = getFilteredTasks();
+      rows = rows.slice().sort((a, b) => (a[taskSort.key] || '').localeCompare(b[taskSort.key] || '') * taskSort.dir);
+      document.getElementById('taskCount').textContent = `Showing ${rows.length} of ${DATA.length} videos`;
+      const body = document.getElementById('taskTableBody');
+      body.innerHTML = rows.map(row => '<tr>' + cols.map(c => {
+        if (c.key.includes('Status') || c.key === 'Final Internal Approval' || c.key === 'Client Approval') {
+          return `<td>${statusBadge(row[c.key], row, c.key)}</td>`;
+        }
+        if (c.key === 'Creative Link' || c.key === 'Production Link' || c.key === 'Editor Link') {
+          const linkUrl = row[c.key] || '';
+          let linkHtml = '';
+          if (linkUrl) {
+            linkHtml = `<span class="link-btn" onclick="window.open('${linkUrl.replace(/'/g, "\\'")}', '_blank'); event.stopPropagation();" title="Open link: ${linkUrl}" style="cursor:pointer; display:inline-flex; align-items:center; vertical-align:middle;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </span>`;
+          } else {
+            linkHtml = '<span style="color:var(--text-muted)">—</span>';
+          }
+          return `<td style="text-align:center;">${linkHtml}</td>`;
+        }
+        return `<td>${row[c.key] || '<span style="color:var(--text-muted)">—</span>'}</td>`;
+      }).join('') + '</tr>').join('') || `<tr><td colspan="${cols.length}"><div class="empty-state">No videos match these filters.</div></td></tr>`;
+    }
+    function exportCsv() {
+      const rows = getFilteredTasks();
+      const headers = TASK_COLUMNS.map(c => c.label);
+      const lines = [headers.join(',')];
+      rows.forEach(r => lines.push(TASK_COLUMNS.map(c => '"' + (r[c.key] || '').toString().replace(/"/g, '""') + '"').join(',')));
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'ccm-tracker-filtered.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // ---------- Approvals (admin) ----------
+    function renderApprovals() {
+      if (ROLE !== 'admin') return;
+
+      const client = document.getElementById('approvalsFilterClient').value;
+      const assignee = document.getElementById('approvalsFilterAssignee').value;
+
+      // 1. Get all videos that have at least one stage pending approval
+      let pendingVideos = DATA.filter(row => {
+        return STAGES.some(stage => {
+          return row[stage.statusField] === 'Completed' && row[stage.approvalField] !== 'Approved';
+        });
+      });
+
+      // Apply filters
+      if (client) {
+        pendingVideos = pendingVideos.filter(row => row['Client Name'] === client);
+      }
+      if (assignee) {
+        pendingVideos = pendingVideos.filter(row =>
+          row['Creative Team'] === assignee ||
+          row['Production Team'] === assignee ||
+          row['Editor'] === assignee
+        );
+      }
+
+      // Render Stage approvals table body
+      document.getElementById('approvalsBody').innerHTML = pendingVideos.map(row => {
+        const vt = row['Video Title'].replace(/'/g, "\\'");
+
+        const renderCell = (stage) => {
+          const linkFields = {
+            script: 'Creative Link',
+            prod: 'Production Link',
+            edit: 'Editor Link'
+          };
+          const linkField = linkFields[stage.key];
+          const linkUrl = row[linkField] || '';
+          
+          let linkHtml = '';
+          if (linkUrl) {
+            linkHtml = `<span class="link-btn" onclick="window.open('${linkUrl.replace(/'/g, "\\'")}', '_blank'); event.stopPropagation();" title="Open link: ${linkUrl}" style="cursor:pointer; display:inline-flex; align-items:center; margin-left:6px; vertical-align:middle;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </span>`;
+          }
+
+          if (row[stage.approvalField] === 'Approved') {
+            return `<div style="display:flex; align-items:center; justify-content:flex-start; gap:6px;">
+              ${statusBadge('Approved')}
+              ${linkHtml}
+            </div>`;
+          }
+          if (row[stage.statusField] === 'Completed') {
+            const isChangeSubmission = row[stage.approvalField] === 'Changes requested';
+            const approveText = isChangeSubmission ? 'Approve changes' : 'Approve';
+            return `
+              <div class="action-cell" style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:140px;">
+                <span style="font-size:11px; color:var(--text-muted); font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                  ${row[stage.roleField] || 'Unassigned'}
+                  ${linkHtml}
+                </span>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn small approve" onclick="handleApprove('${vt}','${stage.key}','approve')">${approveText}</button>
+                  <button class="btn small reject" onclick="handleApprove('${vt}','${stage.key}','reject')">Send back</button>
+                </div>
+              </div>
+            `;
+          }
+          const status = row[stage.statusField] || 'Not started';
+          const person = row[stage.roleField] || '—';
+          return `
+            <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+              <div style="display:flex; align-items:center; justify-content:flex-start; gap:6px;">
+                ${statusBadge(status, row, stage.statusField)}
+                ${linkHtml}
+              </div>
+              <span style="font-size:11px; color:var(--text-muted);">${person}</span>
+            </div>
+          `;
+        };
+
+        return `<tr>
+          <td>${row['Client Name']}</td>
+          <td>${row['Video Title']}</td>
+          <td>${renderCell(STAGES[0])}</td>
+          <td>${renderCell(STAGES[1])}</td>
+          <td>${renderCell(STAGES[2])}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5"><div class="empty-state">No stages waiting on approval right now.</div></td></tr>`;
+
+      // 2. Gates table filtering
+      let gateEligible = DATA.filter(row => STAGES.every(s => row[s.approvalField] === 'Approved'));
+      if (client) {
+        gateEligible = gateEligible.filter(row => row['Client Name'] === client);
+      }
+      if (assignee) {
+        gateEligible = gateEligible.filter(row =>
+          row['Creative Team'] === assignee ||
+          row['Production Team'] === assignee ||
+          row['Editor'] === assignee
+        );
+      }
+
+      document.getElementById('gatesBody').innerHTML = gateEligible.map(row => {
+        const vt = row['Video Title'].replace(/'/g, "\\'");
+        const finalBtn = row['Final Internal Approval'] === 'Approved' ? statusBadge('Approved') :
+          `<button class="btn small approve" onclick="handleGate('${vt}','Final Internal Approval','Approved')">Approve</button>`;
+        const clientBtn = row['Client Approval'] === 'Approved' ? statusBadge('Approved') :
+          `<button class="btn small approve" onclick="handleGate('${vt}','Client Approval','Approved')">Approve</button>`;
+        const broadcastBtn = statusCategory(row['Broadcast Status']) === 'done' ? statusBadge(row['Broadcast Status']) :
+          `<button class="btn small approve" onclick="handleGate('${vt}','Broadcast Status','Broadcasted')">Mark Broadcasted</button>`;
+        return `<tr>
+      <td>${row['Client Name']}</td>
+      <td>${row['Video Title']}</td>
+      <td>${finalBtn}</td>
+      <td>${clientBtn}</td>
+      <td>${broadcastBtn}</td>
+    </tr>`;
+      }).join('') || `<tr><td colspan="5"><div class="empty-state">No videos matching filters have all 3 stages approved.</div></td></tr>`;
+    }
+
+    // ---------- Client Approvals ----------
+    function renderClientApprovals() {
+      if (ROLE !== 'admin') return;
+      const body = document.getElementById('clientApprovalsBody');
+      if (!body) return;
+      
+      body.innerHTML = DATA.map(row => {
+        const vt = row['Video Title'].replace(/'/g, "\\'");
+        const clientApprovalStatus = row['Client Approval'] || 'Not started';
+        const editorLink = row['Editor Link'] || '';
+        
+        let linkHtml = '';
+        if (editorLink) {
+          linkHtml = `<span class="link-btn" onclick="window.open('${editorLink.replace(/'/g, "\\'")}', '_blank'); event.stopPropagation();" title="Open final video: ${editorLink}" style="cursor:pointer; display:inline-flex; align-items:center; vertical-align:middle;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          </span>`;
+        } else {
+          linkHtml = '<span style="color:var(--text-muted); font-size:11px;">—</span>';
+        }
+        
+        let statusBadgeClass = 'not';
+        if (clientApprovalStatus === 'Approved') statusBadgeClass = 'good';
+        if (clientApprovalStatus === 'Changes requested') statusBadgeClass = 'urgent';
+        if (clientApprovalStatus === 'Under Review') statusBadgeClass = 'progress';
+        
+        const badge = `<span class="badge ${statusBadgeClass}">${clientApprovalStatus}</span>`;
+        
+        // Actions
+        const actions = `
+          <div style="display:flex; gap:6px;">
+            <button class="btn small good" onclick="handleSetGateStatusDirect('${vt}', 'Client Approval', 'Approved')">✓ Approve</button>
+            <button class="btn small reject" onclick="handleClientRework('${vt}')">❌ Rework</button>
+            <button class="btn small primary" onclick="handleSetGateStatusDirect('${vt}', 'Client Approval', 'Under Review')">⏳ Sent to Client</button>
+          </div>
+        `;
+        
+        return `<tr>
+          <td>${row['Client Name']}</td>
+          <td>${row['Video Title']}</td>
+          <td style="text-align:center;">${linkHtml}</td>
+          <td>${badge}</td>
+          <td>${actions}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5"><div class="empty-state">No videos found.</div></td></tr>`;
+    }
+
+    function handleSetGateStatusDirect(videoTitle, columnName, value) {
+      callServer('setGateStatus', [videoTitle, columnName, value], function () {
+        const row = DATA.find(r => r['Video Title'] === videoTitle);
+        if (row) {
+          row[columnName] = value;
+        }
+        renderAll();
+        showToast(`${columnName} status updated to ${value}!`, 'success');
+      }, function (err) {
+        showToast('Failed to update status: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+      });
+    }
+
+    function handleClientRework(videoTitle) {
+      customPrompt('Enter client feedback / changes requested:', '', function(comment) {
+        if (!comment) return; // cancel or empty submit does nothing
+        
+        // We set Client Approval to 'Changes requested'
+        callServer('setGateStatus', [videoTitle, 'Client Approval', 'Changes requested'], function() {
+          const row = DATA.find(r => r['Video Title'] === videoTitle);
+          if (row) {
+            row['Client Approval'] = 'Changes requested';
+            row['Editing Status'] = 'Needs rework';
+            row['Editing Message'] = comment;
+          }
+          
+          // Let's notify the backend about the editor rework
+          callServer('approveStage', [videoTitle, 'edit', 'reject', comment], function() {
+            renderAll();
+            showToast('Client feedback sent back to Editor successfully!', 'success');
+          }, function(err) {
+            renderAll();
+            showToast('Updated Client Approval, but failed to automatically update Editor status.', 'info');
+          });
+          
+        }, function(err) {
+          showToast('Failed to update Client Approval status: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+        });
+      }, true);
+    }
+
+    // ---------- Assign (admin) ----------
+    function startAssignEdit() {
+      isAssignEditing = true;
+      pendingAssignments = {};
+      renderAssignTab();
+    }
+    function cancelAssignments() {
+      isAssignEditing = false;
+      pendingAssignments = {};
+      renderAssignTab();
+    }
+    function handleAssignChange(videoTitle, roleCol, newPerson) {
+      const key = `${videoTitle}|${roleCol}`;
+      pendingAssignments[key] = newPerson;
+      const btnApply = document.getElementById('btnAssignApply');
+      if (btnApply) {
+        btnApply.disabled = Object.keys(pendingAssignments).length === 0;
+      }
+    }
+    function handlePriorityChange(videoTitle, newPriority) {
+      const key = `${videoTitle}|Priority`;
+      pendingAssignments[key] = newPriority;
+      const btnApply = document.getElementById('btnAssignApply');
+      if (btnApply) {
+        btnApply.disabled = Object.keys(pendingAssignments).length === 0;
+      }
+    }
+    function handleDeadlineChange(videoTitle, newDeadline) {
+      const key = `${videoTitle}|Deadline`;
+      pendingAssignments[key] = newDeadline;
+      const btnApply = document.getElementById('btnAssignApply');
+      if (btnApply) {
+        btnApply.disabled = Object.keys(pendingAssignments).length === 0;
+      }
+    }
+    function applyAssignments() {
+      const keys = Object.keys(pendingAssignments);
+      if (keys.length === 0) return;
+
+      const btnApply = document.getElementById('btnAssignApply');
+      const btnCancel = document.getElementById('btnAssignCancel');
+      btnApply.textContent = 'Saving...';
+      btnApply.disabled = true;
+      btnCancel.disabled = true;
+
+      let index = 0;
+
+      function saveNext() {
+        if (index >= keys.length) {
+          pendingAssignments = {};
+          isAssignEditing = false;
+          renderAll();
+          showToast('Assignments saved successfully!', 'success');
+          return;
+        }
+
+        const key = keys[index];
+        const [videoTitle, roleCol] = key.split('|');
+        const personName = pendingAssignments[key];
+
+        callServer('assignPerson', [videoTitle, roleCol, personName], function () {
+          updateLocalRow(videoTitle, roleCol, personName);
+          index++;
+          saveNext();
+        }, function (err) {
+          showToast('Failed to save assignments: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+          btnApply.textContent = '✓ Apply';
+          btnApply.disabled = false;
+          btnCancel.disabled = false;
+        });
+      }
+
+      saveNext();
+    }
+    function priorityDropdown(row) {
+      const key = `${row['Video Title']}|Priority`;
+      const selectedValue = (key in pendingAssignments) ? pendingAssignments[key] : (row['Priority'] || 'Normal');
+      const vt = row['Video Title'].replace(/'/g, "\\'");
+
+      if (!isAssignEditing) {
+        let priorityClass = 'not';
+        if (selectedValue === 'High') priorityClass = 'progress';
+        return `<span class="badge ${priorityClass}">${selectedValue}</span>`;
+      }
+
+      const options = ['Normal', 'High'].map(opt =>
+        `<option value="${opt}" ${selectedValue === opt ? 'selected' : ''}>${opt}</option>`
+      );
+      return `<select class="assign-select" onchange="handlePriorityChange('${vt}', this.value)">${options.join('')}</select>`;
+    }
+
+    function convertDDMMYYYYToYYYYMMDD(str) {
+      if (!str) return '';
+      const parts = str.trim().split('/');
+      if (parts.length !== 3) return '';
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+
+    function convertYYYYMMDDToDDMMYYYY(str) {
+      if (!str) return '';
+      const parts = str.trim().split('-');
+      if (parts.length !== 3) return '';
+      const year = parts[0];
+      const month = parts[1].padStart(2, '0');
+      const day = parts[2].padStart(2, '0');
+      return `${day}/${month}/${year}`;
+    }
+
+    function deadlineInput(row) {
+      const key = `${row['Video Title']}|Deadline`;
+      const selectedValue = (key in pendingAssignments) ? pendingAssignments[key] : (row['Deadline'] || '');
+      const vt = row['Video Title'].replace(/'/g, "\\'");
+
+      if (!isAssignEditing) {
+        return selectedValue || '<span style="color:var(--text-muted)">—</span>';
+      }
+
+      const dateVal = convertDDMMYYYYToYYYYMMDD(selectedValue);
+      return `<input type="date" class="deadline-input" value="${dateVal}" onchange="handleDeadlineChange('${vt}', convertYYYYMMDDToDDMMYYYY(this.value))" style="width:115px; padding:5px 7px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); text-align:center; font-family:inherit;">`;
+    }
+
+    function getLinkIconHtml(videoTitle, linkField, currentUrl, canEdit) {
+      const activeColor = currentUrl ? 'var(--accent)' : 'var(--text-muted)';
+      const opacity = currentUrl ? '1' : '0.4';
+      const titleAttr = currentUrl ? `title="Open link: ${currentUrl}"` : 'title="No link added yet"';
+      
+      let clickAction = '';
+      if (currentUrl) {
+        clickAction = `onclick="window.open('${currentUrl.replace(/'/g, "\\'")}', '_blank'); event.stopPropagation();"`;
+      } else {
+        clickAction = `onclick="alert('No link has been added yet.'); event.stopPropagation();"`;
+      }
+      
+      const globeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${activeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-globe" style="vertical-align: middle; opacity: ${opacity};"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+      
+      let editBtnHtml = '';
+      if (canEdit) {
+        const editSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2" style="vertical-align: middle;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+        editBtnHtml = `<span class="edit-link-icon" onclick="handleEditLink(event, '${videoTitle.replace(/'/g, "\\'")}', '${linkField}', '${(currentUrl || '').replace(/'/g, "\\'")}')" title="Edit Link" style="cursor:pointer; margin-left:6px; display:inline-flex; align-items:center; opacity:0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">${editSvg}</span>`;
+      }
+      
+      return `<span style="display:inline-flex; align-items:center; gap:2px; vertical-align:middle;">
+        <span class="link-btn" ${clickAction} ${titleAttr} style="cursor:pointer; display:inline-flex; align-items:center;">${globeSvg}</span>
+        ${editBtnHtml}
+      </span>`;
+    }
+
+    function handleEditLink(event, videoTitle, linkField, currentUrl) {
+      event.stopPropagation();
+      customPrompt(`Enter URL for ${linkField}:`, currentUrl, function(newUrl) {
+        if (newUrl && !newUrl.startsWith('http://') && !newUrl.startsWith('https://')) {
+          showToast('Invalid URL. Please make sure the link starts with http:// or https://', 'error');
+          return;
+        }
+        
+        callServer('updateStageLink', [videoTitle, linkField, newUrl], function () {
+          const row = DATA.find(r => r['Video Title'] === videoTitle);
+          if (row) {
+            row[linkField] = newUrl;
+          }
+          renderAll();
+          showToast('Link updated successfully!', 'success');
+        }, function (err) {
+          showToast('Failed to update link: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+        });
+      });
+    }
+
+    function assignDropdown(row, roleCol, teamName) {
+      const disabledAttr = isAssignEditing ? '' : 'disabled';
+      const key = `${row['Video Title']}|${roleCol}`;
+      const selectedValue = (key in pendingAssignments) ? pendingAssignments[key] : row[roleCol];
+
+      const lowerTeam = teamName.toLowerCase().split(' ')[0]; // matches 'creative', 'production', or 'editor'
+      const options = ['<option value="">— unassigned —</option>']
+        .concat(ROSTER.filter(p => p.team && p.team.toLowerCase().includes(lowerTeam)).map(p => `<option value="${p.name}" ${selectedValue === p.name ? 'selected' : ''}>${p.name}</option>`));
+      const vt = row['Video Title'].replace(/'/g, "\\'");
+      const onChangeAttr = isAssignEditing ? `onchange="handleAssignChange('${vt}','${roleCol}', this.value)"` : '';
+      
+      const linkFields = {
+        'Creative Team': 'Creative Link',
+        'Production Team': 'Production Link',
+        'Editor': 'Editor Link'
+      };
+      const linkField = linkFields[roleCol];
+      const linkUrl = row[linkField] || '';
+      const linkHtml = getLinkIconHtml(row['Video Title'], linkField, linkUrl, false);
+
+      return `<div style="display:flex; align-items:center; gap:6px; min-width:140px;">
+        <select class="assign-select" ${disabledAttr} ${onChangeAttr} style="flex:1;">${options.join('')}</select>
+      </div>`;
+    }
+
+    function handleDeleteTask(videoTitle) {
+      if (!confirm(`Are you sure you want to PERMANENTLY DELETE the task "${videoTitle}"?\nThis will remove the row from Google Sheets and cannot be undone.`)) {
+        return;
+      }
+      
+      callServer('deleteTask', [videoTitle], function () {
+        DATA = DATA.filter(r => r['Video Title'] !== videoTitle);
+        renderAll();
+        alert(`Task "${videoTitle}" deleted successfully.`);
+      }, function (err) {
+        alert('Failed to delete task: ' + (err && err.error ? err.error : JSON.stringify(err)));
+      });
+    }
+
+    function handleResetClientTasks() {
+      const clientSelect = document.getElementById('assignFilterClient');
+      const selectedClient = clientSelect ? clientSelect.value : '';
+      if (!selectedClient) {
+        alert('Please select a client from the "All clients" dropdown first.');
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to reset Priority, Deadline, Creative, Production, Editor, and all Asset Links for ALL tasks under client "${selectedClient}"?`)) {
+        return;
+      }
+      
+      isAssignEditing = true;
+      
+      DATA.forEach(row => {
+        if (row['Client Name'] === selectedClient) {
+          const vt = row['Video Title'];
+          pendingAssignments[`${vt}|Priority`] = 'Normal';
+          pendingAssignments[`${vt}|Deadline`] = '';
+          pendingAssignments[`${vt}|Creative Team`] = '';
+          pendingAssignments[`${vt}|Production Team`] = '';
+          pendingAssignments[`${vt}|Editor`] = '';
+          pendingAssignments[`${vt}|Creative Link`] = '';
+          pendingAssignments[`${vt}|Production Link`] = '';
+          pendingAssignments[`${vt}|Editor Link`] = '';
+        }
+      });
+      
+      const btnApply = document.getElementById('btnAssignApply');
+      if (btnApply) {
+        btnApply.disabled = false;
+      }
+      
+      renderAssignTab();
+      alert(`Queued reset for all tasks and links under client "${selectedClient}". Click the "✓ Apply" button to save these changes.`);
+    }
+
+    function renderAssignTab() {
+      if (ROLE !== 'admin') return;
+      const search = (document.getElementById('assignSearch').value || '').toLowerCase().trim();
+      const client = document.getElementById('assignFilterClient').value;
+      let rows = DATA;
+      if (client) rows = rows.filter(r => r['Client Name'] === client);
+      if (search) rows = rows.filter(r => (r['Client Name'] + ' ' + r['Video Title']).toLowerCase().includes(search));
+
+      document.getElementById('assignBody').innerHTML = rows.map(row => {
+        const vt = row['Video Title'].replace(/'/g, "\\'");
+        const deleteBtn = isAssignEditing 
+          ? `<button class="btn small reject" onclick="handleDeleteTask('${vt}')" style="font-weight:700;">Delete</button>`
+          : '<span style="color:var(--text-muted)">—</span>';
+        
+        return `
+          <tr>
+            <td>${row['Client Name']}</td>
+            <td>${row['Video Title']}</td>
+            <td>${priorityDropdown(row)}</td>
+            <td>${deadlineInput(row)}</td>
+            <td>${assignDropdown(row, 'Creative Team', 'Creative')}</td>
+            <td>${assignDropdown(row, 'Production Team', 'Production')}</td>
+            <td>${assignDropdown(row, 'Editor', 'Editor')}</td>
+            <td style="text-align:center;">${deleteBtn}</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="8"><div class="empty-state">No videos match.</div></td></tr>`
+
+      // Update buttons visibility
+      const btnEdit = document.getElementById('btnAssignEdit');
+      const btnAdd = document.getElementById('btnAssignAdd');
+      const btnResetClient = document.getElementById('btnAssignResetClient');
+      const btnApply = document.getElementById('btnAssignApply');
+      const btnCancel = document.getElementById('btnAssignCancel');
+
+      if (btnEdit && btnApply && btnCancel) {
+        if (isAssignEditing) {
+          btnEdit.style.display = 'none';
+          if (btnAdd) btnAdd.style.display = 'none';
+          if (btnResetClient) btnResetClient.style.display = 'none';
+          btnApply.style.display = 'inline-block';
+          btnCancel.style.display = 'inline-block';
+          btnApply.textContent = '✓ Apply';
+          btnApply.disabled = Object.keys(pendingAssignments).length === 0;
+          btnCancel.disabled = false;
+        } else {
+          btnEdit.style.display = 'inline-block';
+          if (btnAdd) btnAdd.style.display = 'inline-block';
+          if (btnResetClient) btnResetClient.style.display = 'inline-block';
+          btnApply.style.display = 'none';
+          btnCancel.style.display = 'none';
+        }
+      }
+    }
+
+    // ---------- Team (browse anyone) ----------
+    let selectedPerson = null;
+    function renderTeamChips() {
+      const counts = {};
+      ROSTER.forEach(p => counts[p.name] = 0);
+      DATA.forEach(row => { ['Creative Team', 'Production Team', 'Editor'].forEach(f => { const n = row[f]; if (n && counts.hasOwnProperty(n)) counts[n]++; }); });
+      if (!selectedPerson) selectedPerson = ROLE === 'member' ? MY_NAME : ROSTER[0].name;
+      const el = document.getElementById('teamChips');
+      el.innerHTML = ROSTER.map(p => {
+        const color = p.team === 'Creative' ? 'var(--role-creative)' : (p.team === 'Production' ? 'var(--role-production)' : 'var(--role-editor)');
+        return `<button class="chip ${selectedPerson === p.name ? 'active' : ''}" data-name="${p.name}"><span class="role-dot" style="background:${color}"></span>${p.name} <span class="n">${counts[p.name]}</span></button>`;
+      }).join('');
+      el.querySelectorAll('.chip').forEach(chip => { chip.onclick = () => { selectedPerson = chip.dataset.name; renderTeamChips(); renderTeamTable(); }; });
+    }
+    function handleResetUserPassword(email, name) {
+      customConfirm('Confirm Password Reset', `Are you sure you want to reset the password for ${name} (${email})?\nThis will clear their current password, allowing them to register a new one next time they log in.`, function () {
+        callServer('resetUserPassword', [email], function () {
+          showToast(`Password for ${name} has been successfully reset!`, 'success');
+        });
+      });
+    }
+
+    function handleDeleteTeamMember(name, email) {
+      customConfirm('Confirm Delete Member', `Are you sure you want to PERMANENTLY DELETE team member "${name}"? This will clear their login details and roster registration.`, function() {
+        callServer('deleteTeamMember', [name, email], function() {
+          showToast(`Team member "${name}" deleted successfully!`, 'success');
+          ROSTER = ROSTER.filter(p => p.name !== name);
+          if (email) {
+            delete TEAM_ACCOUNTS[email];
+          }
+          selectedPerson = ROSTER[0] ? ROSTER[0].name : null;
+          renderTeamChips();
+          renderTeamTable();
+        }, function(err) {
+          showToast('Failed to delete team member: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+        });
+      });
+    }
+
+    function renderTeamTable() {
+      const rows = DATA.filter(r => r['Creative Team'] === selectedPerson || r['Production Team'] === selectedPerson || r['Editor'] === selectedPerson);
+      const person = ROSTER.find(p => p.name === selectedPerson);
+      
+      const email = Object.keys(TEAM_ACCOUNTS).find(k => TEAM_ACCOUNTS[k].name === selectedPerson);
+      let adminActionsHtml = '';
+      if (ROLE === 'admin') {
+        let resetBtn = email ? `<button class="btn small primary" onclick="handleResetUserPassword('${email.replace(/'/g, "\\'")}', '${selectedPerson.replace(/'/g, "\\'")}')" style="font-weight:700;">Reset Password</button>` : '';
+        let deleteBtn = `<button class="btn small reject" onclick="handleDeleteTeamMember('${selectedPerson.replace(/'/g, "\\'")}', '${(email || '').replace(/'/g, "\\'")}')" style="font-weight:700;">🗑️ Delete Member</button>`;
+        adminActionsHtml = `<div style="margin-left:auto; display:flex; gap:8px;">${resetBtn}${deleteBtn}</div>`;
+      }
+
+      document.getElementById('teamStat').innerHTML = `
+        <span class="s"><b>${rows.length}</b> videos assigned</span>
+        <span class="s">Role: <b>${person ? person.team : '—'}</b></span>
+        ${adminActionsHtml}
+      `;
+      document.getElementById('teamTableBody').innerHTML = rows.map(r => {
+        let role = '', stageStatus = '', fieldName = '';
+        if (r['Creative Team'] === selectedPerson) { role = 'Creative — Script & Storyboard'; stageStatus = r['Script & Storyboard Status']; fieldName = 'Script & Storyboard Status'; }
+        else if (r['Production Team'] === selectedPerson) { role = 'Production — Image & Video Gen'; stageStatus = r['Image & Video Generation Status']; fieldName = 'Image & Video Generation Status'; }
+        else if (r['Editor'] === selectedPerson) { role = 'Editor — Editing'; stageStatus = r['Editing Status']; fieldName = 'Editing Status'; }
+        return `<tr><td>${r['Client Name']}</td><td>${r['Video Title']}</td><td>${role}</td><td>${statusBadge(stageStatus, r, fieldName)}</td><td>${r['Deadline'] || '<span style="color:var(--text-muted)">—</span>'}</td></tr>`;
+      }).join('') || `<tr><td colspan="5"><div class="empty-state">No videos assigned to ${selectedPerson} yet.</div></td></tr>`;
+    }
+
+    // ---------- Clients ----------
+    function renderClientsGrid() {
+      document.getElementById('clientsDesc').textContent = CLIENTS.length + ' clients, ' + DATA.length + ' videos total.';
+      document.getElementById('clientsGrid').innerHTML = CLIENTS.map(c => {
+        const rows = DATA.filter(r => r['Client Name'] === c.name);
+        const avgPct = Math.round(rows.reduce((s, r) => s + videoProgressPct(r), 0) / rows.length);
+        const deadlines = rows.filter(r => r['Deadline']).length;
+        const stageCounts = STAGES.map(s => ({ label: s.label, done: rows.filter(r => statusCategory(r[s.statusField]) === 'done').length, total: rows.length }));
+        return `<div class="card client-card">
+      <div class="chead"><span class="n">${c.name}</span><span class="v">${rows.length} videos</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${avgPct}%"></div></div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${avgPct}% average progress · ${deadlines} with a deadline set</div>
+      <div class="stagebreak">${stageCounts.map(s => `<div class="srow"><span>${s.label}</span><span>${s.done}/${s.total}</span></div>`).join('')}</div>
+    </div>`;
+      }).join('');
+    }
+
+    // ---------- Deadlines ----------
+    function renderDeadlines() {
+      const withDeadline = DATA.filter(r => r['Deadline']);
+      const withoutDeadline = DATA.filter(r => !r['Deadline']);
+      document.getElementById('deadlineCallout').innerHTML = `<b>Heads up:</b>&nbsp;only ${withDeadline.length} of ${DATA.length} videos have a deadline set in the sheet.`;
+      document.getElementById('deadlineScheduled').innerHTML = withDeadline.length ? withDeadline.map(r => `
+    <div class="drow"><div><b>${r['Video Title']}</b><div style="color:var(--text-muted);font-size:11.5px">${r['Client Name']}</div></div><div>${r['Deadline']}</div><div>${statusBadge(r['Script & Storyboard Status'], r, 'Script & Storyboard Status')}</div></div>
+  `).join('') : '<div class="empty-state">No deadlines scheduled.</div>';
+      document.getElementById('noDeadlineCount').textContent = withoutDeadline.length;
+      document.getElementById('noDeadlineBody').innerHTML = withoutDeadline.map(r => `
+    <tr><td>${r['Client Name']}</td><td>${r['Video Title']}</td><td>${r['Creative Team'] || '—'}</td><td>${r['Production Team'] || '<span style="color:var(--text-muted)">—</span>'}</td><td>${r['Editor'] || '<span style="color:var(--text-muted)">—</span>'}</td></tr>
+  `).join('');
+    }
+
+    // ---------- Tabs ----------
+    document.querySelectorAll('nav.tabs button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('section.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + btn.dataset.view).classList.add('active');
+      };
+    });
+
+    // ---------- Theme ----------
+    document.getElementById('themeToggle').onclick = () => {
+      const body = document.body;
+      const isDark = body.getAttribute('data-theme') === 'dark';
+      body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('themeToggle').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+    };
+
+    // ---------- Listeners ----------
+    ['taskSearch', 'filterClient', 'filterAssignee', 'filterStage', 'filterStatus'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', renderTaskTable);
+        el.addEventListener('change', renderTaskTable);
+      }
+    });
+    document.getElementById('exportCsv').onclick = exportCsv;
+    ['assignSearch', 'assignFilterClient'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', renderAssignTab);
+        el.addEventListener('change', renderAssignTab);
+      }
+    });
+    ['approvalsFilterClient', 'approvalsFilterAssignee'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', renderApprovals);
+      }
+    });
+
+    function parseDDMMYYYY(str) {
+      if (!str) return null;
+      const parts = str.trim().split('/');
+      if (parts.length !== 3) return null;
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+      const year = parseInt(parts[2], 10);
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      return new Date(year, month, day);
+    }
+
+    function getDaysDiff(date1, date2) {
+      const diffTime = date2.getTime() - date1.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    function checkDeadlineNotifications() {
+      const container = document.getElementById('deadlineNotifications');
+      if (!container) return;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const urgentTasks = [];
+      
+      DATA.forEach(row => {
+        STAGES.forEach(stage => {
+          if (row[stage.roleField] === MY_NAME) {
+            const statusVal = row[stage.statusField] || '';
+            const approvalVal = row[stage.approvalField] || '';
+            
+            if (statusVal !== 'Completed' && approvalVal !== 'Approved') {
+              const deadlineStr = row['Deadline'];
+              if (deadlineStr) {
+                const deadlineDate = parseDDMMYYYY(deadlineStr);
+                if (deadlineDate) {
+                  deadlineDate.setHours(0, 0, 0, 0);
+                  const daysDiff = getDaysDiff(today, deadlineDate);
+                  
+                  if (daysDiff <= 2) {
+                    urgentTasks.push({
+                      videoTitle: row['Video Title'],
+                      clientName: row['Client Name'],
+                      stageLabel: stage.label,
+                      deadline: deadlineStr,
+                      daysDiff: daysDiff
+                    });
+                  }
+                }
+              }
+            }
+          }
+        });
+      });
+      
+      if (urgentTasks.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+      
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div class="notification-banner">
+          <div class="notification-title" style="font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+            <span>⚠️</span>
+            <span>Task Deadline Alerts (${urgentTasks.length})</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            ${urgentTasks.map(task => {
+              let diffText = '';
+              let badgeClass = 'progress';
+              if (task.daysDiff < 0) {
+                diffText = `Overdue by ${Math.abs(task.daysDiff)} days!`;
+                badgeClass = 'critical';
+              } else if (task.daysDiff === 0) {
+                diffText = 'Due TODAY!';
+                badgeClass = 'urgent';
+              } else if (task.daysDiff === 1) {
+                diffText = 'Due tomorrow!';
+                badgeClass = 'urgent';
+              } else {
+                diffText = `Due in ${task.daysDiff} days`;
+                badgeClass = 'progress';
+              }
+              
+              return `
+                <div class="notification-item ${task.daysDiff <= 1 ? 'urgent-task' : ''}">
+                  <div>
+                    <b>${task.clientName}</b> - ${task.videoTitle}
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Stage: ${task.stageLabel}</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:600; font-size:12px;">Deadline: ${task.deadline}</span>
+                    <span class="badge ${badgeClass}" style="font-size:11px; padding:2px 6px;">${diffText}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ---------- Render everything ----------
+    function renderAll() {
+      checkDeadlineNotifications();
+      renderKpis();
+      renderStageChart();
+      renderWorkloadChart();
+      renderClientProgress();
+      renderMyTasks();
+      renderTaskTable();
+      renderApprovals();
+      renderClientApprovals();
+      renderAssignTab();
+      renderTeamChips();
+      renderTeamTable();
+      renderClientsGrid();
+      renderDeadlines();
+    }
+
+    // ---------- Global Month/Year Filters ----------
+    function applyGlobalFilters() {
+      const monthSel = document.getElementById('globalMonthSelect').value;
+      const yearInput = document.getElementById('globalYearInput').value.trim();
+
+      DATA = ORIGINAL_DATA.filter(row => {
+        const deadline = (row['Deadline'] || '').trim();
+
+        if (!deadline) {
+          return !monthSel && !yearInput;
+        }
+
+        const parts = deadline.split('/');
+        if (parts.length < 3) {
+          return !monthSel && !yearInput;
+        }
+
+        const monthNum = parseInt(parts[1], 10);
+        const year = parts[2].trim();
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthName = (monthNum >= 1 && monthNum <= 12) ? months[monthNum - 1] : '';
+
+        const matchesMonth = !monthSel || monthName === monthSel;
+        const matchesYear = !yearInput || year.includes(yearInput);
+        return matchesMonth && matchesYear;
+      });
+
+      renderAll();
+    }
+
+    // ---------- Init ----------
+    renderWhoAmI();
+    populateFilterOptions();
+
+    // Global Month/Year Filter Listeners
+    document.getElementById('globalMonthSelect').addEventListener('change', applyGlobalFilters);
+    document.getElementById('globalYearInput').addEventListener('input', applyGlobalFilters);
+
+    if (ROLE === 'member') {
+      document.querySelector('nav.tabs button[data-view="mytasks"]').click();
+    }
+
+    <% if (role === 'admin') { %>
+    function openAddMemberModal() {
+      document.getElementById('modalMemberName').value = '';
+      document.getElementById('modalMemberEmail').value = '';
+      document.getElementById('modalMemberRole').value = '';
+      document.getElementById('addMemberModal').style.display = 'flex';
+    }
+    function closeAddMemberModal() {
+      document.getElementById('addMemberModal').style.display = 'none';
+    }
+    function submitAddMember(e) {
+      e.preventDefault();
+      const name = document.getElementById('modalMemberName').value.trim();
+      const email = document.getElementById('modalMemberEmail').value.trim();
+      const team = document.getElementById('modalMemberRole').value;
+      
+      const btn = document.getElementById('btnSubmitMemberModal');
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+      
+      callServer('addTeamMember', [name, team, email], function (result) {
+        btn.disabled = false;
+        btn.textContent = 'Add Member';
+        closeAddMemberModal();
+        
+        // Update local ROSTER reference dynamically
+        ROSTER.length = 0;
+        result.roster.forEach(r => ROSTER.push(r));
+        
+        // Update local TEAM_ACCOUNTS reference dynamically
+        for (const key in TEAM_ACCOUNTS) delete TEAM_ACCOUNTS[key];
+        Object.assign(TEAM_ACCOUNTS, result.teamAccounts);
+        
+        renderAll();
+        alert(`Team member ${name} added successfully!`);
+      }, function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Add Member';
+        alert('Failed to add team member: ' + (err && err.error ? err.error : JSON.stringify(err)));
+      });
+    }
+
+    function openAddTaskModal() {
+      // 1. Populate Client list
+      const clientSelect = document.getElementById('modalClientName');
+      clientSelect.innerHTML = '<option value="">-- Select Client --</option>';
+      CLIENTS.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.name;
+        o.textContent = c.name;
+        clientSelect.appendChild(o);
+      });
+
+      // 2. Populate Roster members
+      const creativeSelect = document.getElementById('modalCreative');
+      creativeSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+      ROSTER.filter(p => p.team && p.team.toLowerCase().includes('creative')).forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.name;
+        o.textContent = p.name;
+        creativeSelect.appendChild(o);
+      });
+
+      const productionSelect = document.getElementById('modalProduction');
+      productionSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+      ROSTER.filter(p => p.team && p.team.toLowerCase().includes('production')).forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.name;
+        o.textContent = p.name;
+        productionSelect.appendChild(o);
+      });
+
+      const editorSelect = document.getElementById('modalEditor');
+      editorSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+      ROSTER.filter(p => p.team && p.team.toLowerCase().includes('editor')).forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.name;
+        o.textContent = p.name;
+        editorSelect.appendChild(o);
+      });
+
+      // 3. Clear inputs
+      document.getElementById('modalVideoTitle').value = '';
+      document.getElementById('modalPriority').value = 'Normal';
+      document.getElementById('modalDeadline').value = '';
+      toggleNewClientInput(false);
+
+      // 4. Show modal
+      const modal = document.getElementById('addTaskModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeAddTaskModal() {
+      document.getElementById('addTaskModal').style.display = 'none';
+    }
+
+    let isCreatingNewClient = false;
+    function toggleNewClientInput(showNew) {
+      isCreatingNewClient = showNew;
+      const select = document.getElementById('modalClientName');
+      const container = document.getElementById('newClientInputContainer');
+      const toggleBtn = document.getElementById('btnToggleNewClient');
+      const input = document.getElementById('modalNewClientName');
+
+      if (showNew) {
+        select.style.display = 'none';
+        select.required = false;
+        container.style.display = 'flex';
+        input.required = true;
+        input.focus();
+        toggleBtn.style.display = 'none';
+      } else {
+        select.style.display = 'block';
+        select.required = true;
+        container.style.display = 'none';
+        input.required = false;
+        input.value = '';
+        toggleBtn.style.display = 'block';
+      }
+    }
+
+    function submitAddTask(e) {
+      e.preventDefault();
+      const clientName = isCreatingNewClient 
+        ? document.getElementById('modalNewClientName').value.trim() 
+        : document.getElementById('modalClientName').value;
+      const videoTitle = document.getElementById('modalVideoTitle').value.trim();
+      const priority = document.getElementById('modalPriority').value;
+      let deadline = document.getElementById('modalDeadline').value.trim();
+      if (deadline && deadline.includes('-')) {
+        deadline = convertYYYYMMDDToDDMMYYYY(deadline);
+      }
+      const creative = document.getElementById('modalCreative').value;
+      const production = document.getElementById('modalProduction').value;
+      const editor = document.getElementById('modalEditor').value;
+
+      if (!clientName || !videoTitle) {
+        alert('Client Name and Video Title are required.');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmitModal');
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Creating...';
+
+      callServer('createTask', [clientName, videoTitle, priority, deadline, creative, production, editor], function (result) {
+        if (result.ok) {
+          // Push new task to DATA array
+          DATA.push(result.task);
+          
+          // Recompute clients
+          const counts = {};
+          DATA.forEach(t => {
+            const c = t['Client Name'];
+            if (c) counts[c] = (counts[c] || 0) + 1;
+          });
+          CLIENTS.length = 0;
+          for (const name in counts) {
+            CLIENTS.push({ name, count: counts[name] });
+          }
+
+          populateFilterOptions();
+          closeAddTaskModal();
+          renderAll();
+          alert('New video task created successfully!');
+        }
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Create Video';
+      }, function (err) {
+        alert('Failed to create task: ' + (err && err.error ? err.error : JSON.stringify(err)));
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Create Video';
+      });
+    }
+    <% } %>
+
+    renderAll();
+  </script>
+  <!-- Add Task Modal -->
+  <% if (role === 'admin') { %>
+  <div id="addTaskModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center;">
+    <div class="modal-card" style="background:var(--surface-1); border:1px solid var(--border); border-radius:16px; width:100%; max-width:500px; padding:24px; box-shadow:0 8px 32px rgba(0,0,0,0.4); animation:fadeIn 0.2s ease-out;">
+      <h3 style="margin-top:0; margin-bottom:16px; font-size:18px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">➕ Create New Video Task</h3>
+      <form id="addTaskForm" onsubmit="submitAddTask(event)">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Client Name *</label>
+              <button type="button" id="btnToggleNewClient" onclick="toggleNewClientInput(true)" style="background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; font-weight:600; padding:0;">+ Create New Client</button>
+            </div>
+            <select id="modalClientName" required style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+              <option value="">-- Select Client --</option>
+            </select>
+            <div id="newClientInputContainer" style="display:none; gap:8px; align-items:center;">
+              <input type="text" id="modalNewClientName" placeholder="Enter new client name" style="flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+              <button type="button" onclick="toggleNewClientInput(false)" style="background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; font-weight:600; padding:0 4px;">Choose Existing</button>
+            </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Video Title *</label>
+            <input type="text" id="modalVideoTitle" required placeholder="e.g. Sathyodhayam - Video 002" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+          </div>
+          <div style="display:flex; gap:12px;">
+            <div style="flex:1;">
+              <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Priority</label>
+              <select id="modalPriority" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Deadline</label>
+              <input type="date" id="modalDeadline" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); text-align:center; font-family:inherit;">
+            </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Creative Team Assignee</label>
+            <select id="modalCreative" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+              <option value="">-- Unassigned --</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Production Team Assignee</label>
+            <select id="modalProduction" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+              <option value="">-- Unassigned --</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Editor Assignee</label>
+            <select id="modalEditor" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+              <option value="">-- Unassigned --</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn" onclick="closeAddTaskModal()">Cancel</button>
+          <button type="submit" id="btnSubmitModal" class="btn primary">Create Video</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div id="addMemberModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center;">
+    <div class="modal-card" style="background:var(--surface-1); border:1px solid var(--border); border-radius:16px; width:100%; max-width:400px; padding:24px; box-shadow:0 8px 32px rgba(0,0,0,0.4); animation:fadeIn 0.2s ease-out;">
+      <h3 style="margin-top:0; margin-bottom:16px; font-size:16px; color:var(--text-primary); font-weight:700; display:flex; align-items:center; gap:8px;">➕ Add New Team Member</h3>
+      <form id="addMemberForm" onsubmit="submitAddMember(event)">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Full Name *</label>
+            <input type="text" id="modalMemberName" required placeholder="e.g. Arun" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Email Address *</label>
+            <input type="email" id="modalMemberEmail" required placeholder="e.g. arun@example.com" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-secondary);">Role / Department * (Creative / Production / Editor)</label>
+            <input type="text" id="modalMemberRole" required placeholder="e.g. Creative Lead, Video Editor, Production Assistant" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn" onclick="closeAddMemberModal()">Cancel</button>
+          <button type="submit" id="btnSubmitMemberModal" class="btn primary">Add Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Dynamic Toast Notification Container -->
+  <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none;"></div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirmModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9000; align-items:center; justify-content:center;">
+    <div class="modal-card" style="background:var(--surface-1); border:1px solid var(--border); border-radius:16px; width:100%; max-width:400px; padding:24px; box-shadow:0 8px 32px rgba(0,0,0,0.4); text-align:center; animation:fadeIn 0.2s ease-out;">
+      <div style="font-size:32px; margin-bottom:12px;">⚠️</div>
+      <h3 id="confirmTitle" style="margin-top:0; margin-bottom:8px; font-size:16px; color:var(--text-primary); font-weight:700;">Confirm Action</h3>
+      <p id="confirmMessage" style="font-size:13px; color:var(--text-secondary); margin-bottom:20px; line-height:1.5;"></p>
+      <div style="display:flex; justify-content:center; gap:12px;">
+        <button id="confirmCancelBtn" class="btn" style="padding:8px 16px;">Cancel</button>
+        <button id="confirmOkBtn" class="btn reject" style="padding:8px 16px;">Yes, Proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Prompt Modal -->
+  <div id="promptModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9000; align-items:center; justify-content:center;">
+    <div class="modal-card" style="background:var(--surface-1); border:1px solid var(--border); border-radius:16px; width:100%; max-width:400px; padding:24px; box-shadow:0 8px 32px rgba(0,0,0,0.4); animation:fadeIn 0.2s ease-out;">
+      <h3 id="promptTitle" style="margin-top:0; margin-bottom:12px; font-size:15px; color:var(--text-primary); font-weight:700;">Enter URL</h3>
+      
+      <!-- Text/URL Input -->
+      <input type="text" id="promptInput" placeholder="https://..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); font-size:13px; margin-bottom:16px; outline:none;">
+      
+      <!-- Voice Recording Section (Dynamic, only shown for voice note feedback) -->
+      <div id="promptVoiceSection" style="display:none; margin-bottom:20px; padding:12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);">
+        <div style="font-size:11.5px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--text-muted);" id="recIndicator"></span>
+          <span id="recStatus">Voice feedback is optional</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" id="btnStartRec" class="btn" style="padding:6px 12px; font-size:12px; background:var(--accent); color:white; border:none; display:flex; align-items:center; gap:4px;">🎤 Record</button>
+          <button type="button" id="btnStopRec" class="btn reject" style="padding:6px 12px; font-size:12px; display:none; align-items:center; gap:4px;">⏹️ Stop</button>
+          <audio id="audioPreview" controls style="display:none; flex:1; height:32px; max-width:200px;"></audio>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="promptCancelBtn" class="btn" style="padding:6px 12px; font-size:12.5px;">Cancel</button>
+        <button id="promptOkBtn" class="btn primary" style="padding:6px 12px; font-size:12.5px;">Save</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
