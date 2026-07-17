@@ -3,7 +3,27 @@ const path = require('path');
 const express = require('express');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
-const creds = require(process.env.GOOGLE_PRIVATE_KEY_PATH);
+let creds;
+if (process.env.GOOGLE_CREDS_JSON) {
+    try {
+        creds = JSON.parse(process.env.GOOGLE_CREDS_JSON);
+    } catch (e) {
+        console.error('Error parsing GOOGLE_CREDS_JSON environment variable:', e);
+    }
+}
+if (!creds && process.env.GOOGLE_PRIVATE_KEY_PATH) {
+    try {
+        const resolvedPath = path.isAbsolute(process.env.GOOGLE_PRIVATE_KEY_PATH)
+            ? process.env.GOOGLE_PRIVATE_KEY_PATH
+            : path.join(__dirname, process.env.GOOGLE_PRIVATE_KEY_PATH);
+        creds = require(resolvedPath);
+    } catch (e) {
+        console.error('Error requiring GOOGLE_PRIVATE_KEY_PATH:', e);
+    }
+}
+if (!creds) {
+    console.error('CRITICAL: No Google API credentials found. Please set GOOGLE_CREDS_JSON or GOOGLE_PRIVATE_KEY_PATH.');
+}
 
 const app = express();
 app.use(express.json());
