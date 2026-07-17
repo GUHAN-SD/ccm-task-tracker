@@ -50,7 +50,7 @@ const auth = new JWT({
 const MASTER_TAB = 'Clients Tracker';
 
 const ADMIN_ACCOUNTS = {
-    'maittomgr@gmail.com': { name: 'Manigandaraja' },
+    'mailtomgr@gmail.com': { name: 'Manigandaraja' },
     'mythkuki11@gmail.com': { name: 'Admin' }
 };
 
