@@ -40,7 +40,7 @@ const ROSTER_FILE = path.join(__dirname, 'roster.json');
 const TEAM_ACCOUNTS_FILE = path.join(__dirname, 'team_accounts.json');
 
 let TEAM_ACCOUNTS = {
-    'guhanredaye@gmail.com': { name: 'Mani' },
+    'guhanredaye@gmail.com': { name: 'Manigandaraja' },
     'ccmmonikam@gmail.com': { name: 'Monika' },
     'ccmkavitham@gmail.com': { name: 'Kavitha' },
     'ccmabinayasri@gmail.com': { name: 'Abinayasri' },
@@ -150,7 +150,8 @@ async function getSheet(tabName) {
         const required = [
             'Script & Storyboard Status - Finished Date',
             'Image & Video Generation Status - Finished Date',
-            'Editing Status - Finished Date'
+            'Editing Status - Finished Date',
+            'Revision Count'
         ];
         let changed = false;
         const newHeaders = [...sheet.headerValues];
@@ -415,6 +416,10 @@ app.post('/api/approveStage', requireAuth, async (req, res) => {
             row.set(fields.approval, 'Changes requested');
             row.set(fields.status, 'Changes requested');
             row.set(fields.message, comment || '');
+
+            // Increment revision count
+            const revs = parseInt(row.get('Revision Count') || '0', 10);
+            row.set('Revision Count', (revs + 1).toString());
         }
         await row.save();
         res.json({ ok: true });
@@ -438,6 +443,11 @@ app.post('/api/setGateStatus', requireAuth, async (req, res) => {
         if (!row) return res.status(404).json({ error: 'Video not found: ' + videoTitle });
 
         row.set(columnName, value);
+        if (columnName === 'Client Approval' && value === 'Changes requested') {
+            // Increment revision count
+            const revs = parseInt(row.get('Revision Count') || '0', 10);
+            row.set('Revision Count', (revs + 1).toString());
+        }
         await row.save();
         res.json({ ok: true });
     } catch (err) {

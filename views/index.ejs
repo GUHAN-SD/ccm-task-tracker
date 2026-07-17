@@ -1313,7 +1313,9 @@
             };
             const msgField = messageFieldByStage[fieldKey];
             const comment = msgField ? (row[msgField] || '') : '';
-            const onClickAttr = comment ? `onclick="customAlert('Feedback from Admin', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer;" title="Click to view details"` : '';
+            const revCount = (row && row['Revision Count']) || '0';
+            const alertTitle = revCount !== '0' ? `changes-${revCount} from Admin` : 'Feedback from Admin';
+            const onClickAttr = comment ? `onclick="customAlert('${alertTitle}', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer;" title="Click to view details"` : '';
             return `<span class="badge progress" ${onClickAttr}><span class="dot"></span>Changes requested</span>`;
           }
           if (value === 'Changes in progress') {
@@ -1703,8 +1705,12 @@
       };
       
       if (decision === 'reject') {
-        customPrompt('Please enter details/comments on what changes are requested:', '', function(comment) {
+        const row = DATA.find(r => r['Video Title'] === videoTitle);
+        const currentRevs = parseInt((row && row['Revision Count']) || '0', 10);
+        const nextRevs = currentRevs + 1;
+        customPrompt('Please enter details/comments on what changes are requested: (Changes requested - ' + nextRevs + ')', '', function(comment) {
           if (!comment) return; // cancelled or empty prompt
+          if (row) row['Revision Count'] = nextRevs.toString();
           proceedApproval(comment);
         }, true);
       } else {
@@ -1898,7 +1904,9 @@
           };
           const msgField = messageFieldByStage[stage.key];
           const comment = msgField ? (row[msgField] || '') : '';
-          const onClickAttr = comment ? `onclick="customAlert('Feedback from Admin', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer; margin-right:8px;" title="Click to view details"` : 'style="margin-right:8px;"';
+          const revCount = (row && row['Revision Count']) || '0';
+          const alertTitle = revCount !== '0' ? `changes-${revCount} from Admin` : 'Feedback from Admin';
+          const onClickAttr = comment ? `onclick="customAlert('${alertTitle}', '${comment.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="cursor:pointer; margin-right:8px;" title="Click to view details"` : 'style="margin-right:8px;"';
           actionCell = `<span class="badge progress" ${onClickAttr}><span class="dot"></span>Changes requested</span>` +
                        `<button class="btn small primary" onclick="handleStartChanges('${row['Video Title'].replace(/'/g, "\\'")}','${stage.key}')">▶ Start Changes</button>`;
         } else if (statusVal === 'Changes in progress') {
@@ -1960,6 +1968,7 @@
       { key: 'Editing Status - Finished Date', label: 'Editing Finished' },
       { key: 'Final Internal Approval', label: 'Internal Approval' },
       { key: 'Client Approval', label: 'Client Approval' },
+      { key: 'Revision Count', label: 'Revisions' },
       { key: 'Broadcast Status', label: 'Broadcast' },
     ];
     let taskSort = { key: 'Client Name', dir: 1 };
@@ -2243,8 +2252,12 @@
     }
 
     function handleClientRework(videoTitle) {
-      customPrompt('Enter client feedback / changes requested:', '', function(comment) {
+      const row = DATA.find(r => r['Video Title'] === videoTitle);
+      const currentRevs = parseInt((row && row['Revision Count']) || '0', 10);
+      const nextRevs = currentRevs + 1;
+      customPrompt('Enter client feedback / changes requested: (Changes requested - ' + nextRevs + ')', '', function(comment) {
         if (!comment) return; // cancel or empty submit does nothing
+        if (row) row['Revision Count'] = nextRevs.toString();
         
         // We set Client Approval to 'Changes requested'
         callServer('setGateStatus', [videoTitle, 'Client Approval', 'Changes requested'], function() {
