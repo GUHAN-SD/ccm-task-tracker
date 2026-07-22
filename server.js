@@ -484,7 +484,11 @@ app.post('/api/assignPerson', requireAuth, async (req, res) => {
         const { videoTitle, roleCol, personName } = req.body;
         const allowedColumns = [
             'Creative Team', 'Production Team', 'Editor', 'Priority', 'Deadline',
-            'Creative Link', 'Production Link', 'Editor Link'
+            'Creative Link', 'Production  Link', 'Editor Link',
+            'Script & Storyboard Status', 'Script & Storyboard Approval', 'Script & Storyboard Message', 'Script & Storyboard Status - Finished Date',
+            'Image & Video Generation Status', 'Image & Video Generation Approval', 'Image & Video Generation Message', 'Image & Video Generation Status - Finished Date',
+            'Editing Status', 'Editing Approval', 'Editing Message', 'Editing Status - Finished Date',
+            'Final Internal Approval', 'Client Approval', 'Broadcast Status', 'Revision Count'
         ];
         if (!allowedColumns.includes(roleCol)) return res.status(400).json({ error: 'Unknown role column: ' + roleCol });
 
@@ -500,6 +504,66 @@ app.post('/api/assignPerson', requireAuth, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.post('/api/assignPersonBatch', requireAuth, async (req, res) => {
+    try {
+        if (!req.isAdmin) {
+            return res.status(403).json({ error: 'Only the admin can assign tasks.' });
+        }
+        const { updates } = req.body;
+        if (!Array.isArray(updates)) {
+            return res.status(400).json({ error: 'Updates must be an array.' });
+        }
+
+        const allowedColumns = [
+            'Creative Team', 'Production Team', 'Editor', 'Priority', 'Deadline',
+            'Creative Link', 'Production  Link', 'Editor Link',
+            'Script & Storyboard Status', 'Script & Storyboard Approval', 'Script & Storyboard Message', 'Script & Storyboard Status - Finished Date',
+            'Image & Video Generation Status', 'Image & Video Generation Approval', 'Image & Video Generation Message', 'Image & Video Generation Status - Finished Date',
+            'Editing Status', 'Editing Approval', 'Editing Message', 'Editing Status - Finished Date',
+            'Final Internal Approval', 'Client Approval', 'Broadcast Status', 'Revision Count'
+        ];
+
+        for (const update of updates) {
+            const { videoTitle, roleCol } = update;
+            if (!videoTitle || !roleCol) {
+                return res.status(400).json({ error: 'Missing videoTitle or roleCol in update data.' });
+            }
+            if (!allowedColumns.includes(roleCol)) {
+                return res.status(400).json({ error: 'Unknown role column: ' + roleCol });
+            }
+        }
+
+        const sheet = await getSheet(MASTER_TAB);
+        const rows = await sheet.getRows();
+
+        const updatesByVideo = {};
+        for (const update of updates) {
+            if (!updatesByVideo[update.videoTitle]) {
+                updatesByVideo[update.videoTitle] = [];
+            }
+            updatesByVideo[update.videoTitle].push(update);
+        }
+
+        for (const videoTitle of Object.keys(updatesByVideo)) {
+            const row = rows.find(r => r.get('Video Title') === videoTitle);
+            if (!row) {
+                return res.status(404).json({ error: 'Video not found: ' + videoTitle });
+            }
+            const rowUpdates = updatesByVideo[videoTitle];
+            for (const item of rowUpdates) {
+                row.set(item.roleCol, item.personName || '');
+            }
+            await row.save();
+        }
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 app.post('/api/createTask', requireAuth, async (req, res) => {
     try {
@@ -608,7 +672,7 @@ app.post('/api/startChanges', requireAuth, async (req, res) => {
 app.post('/api/updateStageLink', requireAuth, async (req, res) => {
     try {
         const { videoTitle, linkField, linkUrl } = req.body;
-        const allowedFields = ['Creative Link', 'Production Link', 'Editor Link'];
+        const allowedFields = ['Creative Link', 'Production  Link', 'Editor Link'];
         if (!allowedFields.includes(linkField)) {
             return res.status(400).json({ error: 'Invalid link field: ' + linkField });
         }
@@ -619,7 +683,7 @@ app.post('/api/updateStageLink', requireAuth, async (req, res) => {
 
         const linkToRoleField = {
             'Creative Link': 'Creative Team',
-            'Production Link': 'Production Team',
+            'Production  Link': 'Production Team',
             'Editor Link': 'Editor'
         };
         const roleField = linkToRoleField[linkField];

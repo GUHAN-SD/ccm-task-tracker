@@ -1613,6 +1613,7 @@
         approveStage: { url: '/api/approveStage', argNames: ['videoTitle', 'stageKey', 'decision', 'comment'] },
         setGateStatus: { url: '/api/setGateStatus', argNames: ['videoTitle', 'columnName', 'value'] },
         assignPerson: { url: '/api/assignPerson', argNames: ['videoTitle', 'roleCol', 'personName'] },
+        assignPersonBatch: { url: '/api/assignPersonBatch', argNames: ['updates'] },
         createTask: { url: '/api/createTask', argNames: ['clientName', 'videoTitle', 'priority', 'deadline', 'creative', 'production', 'editor'] },
         resetUserPassword: { url: '/api/resetUserPassword', argNames: ['email'] },
         deleteTask: { url: '/api/deleteTask', argNames: ['videoTitle'] },
@@ -1929,7 +1930,7 @@
 
         const linkFields = {
           script: 'Creative Link',
-          prod: 'Production Link',
+          prod: 'Production  Link',
           edit: 'Editor Link'
         };
         const linkField = linkFields[stage.key];
@@ -1959,7 +1960,7 @@
       { key: 'Script & Storyboard Status', label: 'Script/Storyboard' },
       { key: 'Script & Storyboard Status - Finished Date', label: 'Script Finished' },
       { key: 'Production Team', label: 'Production' },
-      { key: 'Production Link', label: 'Production Link' },
+      { key: 'Production  Link', label: 'Production Link' },
       { key: 'Image & Video Generation Status', label: 'Image/Video Gen' },
       { key: 'Image & Video Generation Status - Finished Date', label: 'Image/Video Finished' },
       { key: 'Editor', label: 'Editor' },
@@ -2043,7 +2044,7 @@
         if (c.key.includes('Status') || c.key === 'Final Internal Approval' || c.key === 'Client Approval') {
           return `<td>${statusBadge(row[c.key], row, c.key)}</td>`;
         }
-        if (c.key === 'Creative Link' || c.key === 'Production Link' || c.key === 'Editor Link') {
+        if (c.key === 'Creative Link' || c.key === 'Production  Link' || c.key === 'Editor Link') {
           const linkUrl = row[c.key] || '';
           let linkHtml = '';
           if (linkUrl) {
@@ -2104,7 +2105,7 @@
         const renderCell = (stage) => {
           const linkFields = {
             script: 'Creative Link',
-            prod: 'Production Link',
+            prod: 'Production  Link',
             edit: 'Editor Link'
           };
           const linkField = linkFields[stage.key];
@@ -2328,34 +2329,25 @@
       btnApply.disabled = true;
       btnCancel.disabled = true;
 
-      let index = 0;
-
-      function saveNext() {
-        if (index >= keys.length) {
-          pendingAssignments = {};
-          isAssignEditing = false;
-          renderAll();
-          showToast('Assignments saved successfully!', 'success');
-          return;
-        }
-
-        const key = keys[index];
+      const updates = keys.map(key => {
         const [videoTitle, roleCol] = key.split('|');
-        const personName = pendingAssignments[key];
+        return { videoTitle, roleCol, personName: pendingAssignments[key] };
+      });
 
-        callServer('assignPerson', [videoTitle, roleCol, personName], function () {
-          updateLocalRow(videoTitle, roleCol, personName);
-          index++;
-          saveNext();
-        }, function (err) {
-          showToast('Failed to save assignments: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
-          btnApply.textContent = '✓ Apply';
-          btnApply.disabled = false;
-          btnCancel.disabled = false;
+      callServer('assignPersonBatch', [updates], function () {
+        updates.forEach(u => {
+          updateLocalRow(u.videoTitle, u.roleCol, u.personName);
         });
-      }
-
-      saveNext();
+        pendingAssignments = {};
+        isAssignEditing = false;
+        renderAll();
+        showToast('Assignments saved successfully!', 'success');
+      }, function (err) {
+        showToast('Failed to save assignments: ' + (err && err.error ? err.error : JSON.stringify(err)), 'error');
+        btnApply.textContent = '✓ Apply';
+        btnApply.disabled = false;
+        btnCancel.disabled = false;
+      });
     }
     function priorityDropdown(row) {
       const key = `${row['Video Title']}|Priority`;
@@ -2467,7 +2459,7 @@
       
       const linkFields = {
         'Creative Team': 'Creative Link',
-        'Production Team': 'Production Link',
+        'Production Team': 'Production  Link',
         'Editor': 'Editor Link'
       };
       const linkField = linkFields[roleCol];
@@ -2516,8 +2508,29 @@
           pendingAssignments[`${vt}|Production Team`] = '';
           pendingAssignments[`${vt}|Editor`] = '';
           pendingAssignments[`${vt}|Creative Link`] = '';
-          pendingAssignments[`${vt}|Production Link`] = '';
+          pendingAssignments[`${vt}|Production  Link`] = '';
           pendingAssignments[`${vt}|Editor Link`] = '';
+          
+          // Reset status, approval, message, and finished date fields
+          pendingAssignments[`${vt}|Script & Storyboard Status`] = 'Not started';
+          pendingAssignments[`${vt}|Script & Storyboard Approval`] = 'Not yet approved';
+          pendingAssignments[`${vt}|Script & Storyboard Message`] = '';
+          pendingAssignments[`${vt}|Script & Storyboard Status - Finished Date`] = '';
+
+          pendingAssignments[`${vt}|Image & Video Generation Status`] = 'Not started';
+          pendingAssignments[`${vt}|Image & Video Generation Approval`] = 'Not yet approved';
+          pendingAssignments[`${vt}|Image & Video Generation Message`] = '';
+          pendingAssignments[`${vt}|Image & Video Generation Status - Finished Date`] = '';
+
+          pendingAssignments[`${vt}|Editing Status`] = 'Not started';
+          pendingAssignments[`${vt}|Editing Approval`] = 'Not yet approved';
+          pendingAssignments[`${vt}|Editing Message`] = '';
+          pendingAssignments[`${vt}|Editing Status - Finished Date`] = '';
+
+          pendingAssignments[`${vt}|Final Internal Approval`] = 'Not yet approved';
+          pendingAssignments[`${vt}|Client Approval`] = 'Not yet approved';
+          pendingAssignments[`${vt}|Broadcast Status`] = 'Not started';
+          pendingAssignments[`${vt}|Revision Count`] = '';
         }
       });
       
